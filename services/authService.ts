@@ -2,6 +2,7 @@
 export interface UserProfile {
   username: string;
   email: string;
+  phone: string;
   joinDate: string;
   balance: number;
   hasDeposited: boolean;

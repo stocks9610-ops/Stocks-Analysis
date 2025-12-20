@@ -2,11 +2,55 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 /**
+ * TASK: Neural Support Concierge (Astra)
+ * MODEL: gemini-3-flash-preview
+ */
+export const startSupportChat = async (history: {role: 'user' | 'model', parts: {text: string}[]}[]) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const systemInstruction = `
+    You are 'Astra', the Elite Support Concierge for the CopyTrade World Trade Platform.
+    
+    CRITICAL RESPONSE RULES:
+    1. NEVER write long paragraphs. 
+    2. ALWAYS use bullet points or numbered lists.
+    3. Maximum 3-4 points per response.
+    4. Use BOLD for amounts, wallet addresses, and key actions.
+    5. Be professional, direct, and high-speed.
+
+    PLATFORM DATA & PROTOCOLS:
+    - SIGNUP BONUS: **$1,000** added to balance immediately upon registration.
+    - WITHDRAWAL RULE: To unlock the first payout of bonus/profits, a **$1,000 USDT (TRC-20)** security deposit is required. This verifies the user's external wallet.
+    - WALLET ADDRESS: **0x7592766391918c7d3E7F8Ae72D97e98979F25302** (Network: **TRC-20**).
+    - PERFORMANCE: **98.75%** success rate via Neural Capital Deployment.
+    - SECURITY: Funds are split across **Binance, Bybit, and Kraken** for safety.
+
+    EXAMPLE STRUCTURE:
+    - **Bonus**: You have received **$1,000**.
+    - **Unlock**: Deposit **$1,000 USDT** to verify your wallet.
+    - **Status**: Your account is currently in 'New Member' phase.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: history,
+      config: {
+        systemInstruction,
+        temperature: 0.4, // Lower temperature for more consistent, structured output
+      },
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Support Chat Error", error);
+    return "• **Error**: Connection to Neural Node lost.\n• **Action**: Please refresh your terminal.";
+  }
+};
+
+/**
  * TASK: Deep Market Insight
- * MODEL: gemini-3-pro-preview
  */
 export const deepMarketAnalysis = async (prompt: string, base64Image?: string, mimeType?: string) => {
-  // Always use the latest API key from environment
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const parts: any[] = [{ text: prompt }];
   
@@ -28,7 +72,6 @@ export const deepMarketAnalysis = async (prompt: string, base64Image?: string, m
         temperature: 0.2, 
       },
     });
-    // Access .text property directly
     return response.text;
   } catch (error: any) {
     console.error("AI Analysis Failed", error);
@@ -101,10 +144,8 @@ export const getInstantMarketPulse = async (asset: string = "Bitcoin") => {
   }
 };
 
-// FIX: Added missing exported function getTraderEdgeFast
 /**
  * TASK: Trader Edge Summary
- * MODEL: gemini-3-flash-preview
  */
 export const getTraderEdgeFast = async (bio: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

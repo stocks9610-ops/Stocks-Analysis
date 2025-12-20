@@ -7,6 +7,7 @@ import MarketChart from './components/MarketChart';
 import Features from './components/Features';
 import TraderList from './components/TraderList';
 import AIAssistant from './components/AIAssistant';
+import SupportBot from './components/SupportBot';
 import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
 import Dashboard from './components/Dashboard';
@@ -14,6 +15,7 @@ import { authService, UserProfile } from './services/authService';
 
 const App: React.FC = () => {
   const [showAI, setShowAI] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [view, setView] = useState<'landing' | 'dashboard'>('landing');
@@ -67,8 +69,7 @@ const App: React.FC = () => {
       }
       setDeferredPrompt(null);
     } else {
-      // Fallback for iOS or already installed
-      return true; // Signal to show the manual guide modal
+      return true; 
     }
     return false;
   };
@@ -103,16 +104,33 @@ const App: React.FC = () => {
 
       <Footer />
 
-      <button 
-        onClick={() => setShowAI(!showAI)}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-12 h-12 md:w-14 md:h-14 bg-[#f01a64] hover:bg-pink-700 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 z-50 group"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </button>
+      {/* FLOATING ACTION BUTTONS */}
+      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col gap-3 z-50">
+        <button 
+          onClick={() => { setShowSupport(!showSupport); setShowAI(false); }}
+          className="w-12 h-12 md:w-14 md:h-14 bg-[#00b36b] hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative"
+          title="Neural Support"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          <span className="absolute right-full mr-3 px-2 py-1 bg-[#00b36b] text-white text-[9px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">SUPPORT ACTIVE</span>
+        </button>
+
+        <button 
+          onClick={() => { setShowAI(!showAI); setShowSupport(false); }}
+          className="w-12 h-12 md:w-14 md:h-14 bg-[#f01a64] hover:bg-pink-700 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative"
+          title="Market Oracle"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span className="absolute right-full mr-3 px-2 py-1 bg-[#f01a64] text-white text-[9px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">MARKET ORACLE</span>
+        </button>
+      </div>
 
       {showAI && <AIAssistant onClose={() => setShowAI(false)} />}
+      {showSupport && <SupportBot onClose={() => setShowSupport(false)} />}
       
       {showSignup && (
         <SignupModal 

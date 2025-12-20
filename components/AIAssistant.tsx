@@ -9,7 +9,10 @@ interface AIAssistantProps {
 
 const AIAssistant: React.FC<AIAssistantProps> = ({ onClose }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: 'World Trade Platform Intelligence Terminal active. Choose a task or upload a chart for deep analysis.' }
+    { 
+      role: 'model', 
+      text: '• **STATUS**: Neural Terminal Online\n• **ACCESS**: Hyperthread Enabled\n\nChoose a market task below or upload a chart for a deep forensic audit. I am ready to calculate.' 
+    }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

