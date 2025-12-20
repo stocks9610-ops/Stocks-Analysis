@@ -18,9 +18,7 @@ const MarketChart: React.FC = () => {
   const [lastIncrement, setLastIncrement] = useState<number>(0);
   const [history, setHistory] = useState<number[]>(new Array(50).fill(1284560));
   const [feed, setFeed] = useState<FeedEvent[]>([]);
-  const feedEndRef = useRef<HTMLDivElement>(null);
 
-  // Simulation loop for "Real-Time Profit" and "Alpha Stream Events"
   useEffect(() => {
     const mainInterval = setInterval(() => {
       const increment = Math.random() * 450 + 50;
@@ -92,7 +90,6 @@ const MarketChart: React.FC = () => {
     };
   }, []);
 
-  // Calculate SVG path for the profit line
   const min = Math.min(...history);
   const max = Math.max(...history);
   const range = max - min || 1;
@@ -106,7 +103,6 @@ const MarketChart: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-[#1e222d] text-white">
-      {/* HEADER: Performance Hub */}
       <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-[#2a2e39] bg-[#131722] shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
@@ -132,12 +128,8 @@ const MarketChart: React.FC = () => {
         </div>
       </div>
 
-      {/* MULTI-PANEL HUB */}
       <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
-        
-        {/* LEFT PANEL: PROFIT VISUALIZATION (70%) */}
         <div className="flex-1 flex flex-col p-4 md:p-6 border-b xl:border-b-0 xl:border-r border-[#2a2e39] relative">
-          {/* Real-time Counter */}
           <div className="relative z-10 mb-6 flex flex-col items-start">
             <div className="text-gray-500 text-[9px] font-black uppercase tracking-[0.4em] mb-1">Cumulative Distributions</div>
             <div className="text-4xl md:text-6xl font-black tabular-nums tracking-tighter text-[#00b36b]">
@@ -149,7 +141,6 @@ const MarketChart: React.FC = () => {
             </div>
           </div>
 
-          {/* Live SVG Chart */}
           <div className="flex-1 w-full relative group min-h-[150px]">
             <div className="absolute inset-0 bg-gradient-to-t from-[#00b36b]/5 to-transparent pointer-events-none opacity-50"></div>
             <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
@@ -168,10 +159,9 @@ const MarketChart: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT PANEL: ALPHA STREAM (30%) */}
         <div className="w-full xl:w-80 bg-[#131722]/50 flex flex-col shrink-0">
           <div className="p-3 border-b border-[#2a2e39] bg-[#131722] flex items-center justify-between">
-            <span className="text-[10px] font-black text-[#ff8c00] uppercase tracking-[0.2em]">Alpha Stream</span>
+            <span className="text-[10px] font-black text-[#f01a64] uppercase tracking-[0.2em]">Alpha Stream</span>
             <span className="text-[8px] text-gray-600 font-bold uppercase tracking-widest">Live Updates</span>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
@@ -189,7 +179,7 @@ const MarketChart: React.FC = () => {
                   <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
                     item.type === 'PROFIT' ? 'bg-[#00b36b]/10 text-[#00b36b]' : 
                     item.type === 'JOINER' ? 'bg-blue-500/10 text-blue-400' :
-                    item.type === 'MILESTONE' ? 'bg-[#ff8c00]/10 text-[#ff8c00]' :
+                    item.type === 'MILESTONE' ? 'bg-[#f01a64]/10 text-[#f01a64]' :
                     'bg-purple-500/10 text-purple-400'
                   }`}>
                     {item.type}
@@ -217,7 +207,6 @@ const MarketChart: React.FC = () => {
 
       </div>
 
-      {/* FOOTER: Secure Notice */}
       <div className="p-3 bg-[#131722] border-t border-[#2a2e39] flex justify-between items-center text-[8px] font-black uppercase tracking-[0.2em] text-gray-600 shrink-0">
         <div className="flex items-center gap-4">
           <span className="text-[#00b36b]">VERIFIED RETURNS</span>

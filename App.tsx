@@ -48,7 +48,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-orange-500/30 overflow-x-hidden bg-[#131722]">
+    <div className="min-h-screen flex flex-col font-sans selection:bg-pink-500/30 overflow-x-hidden bg-[#131722]">
       <TickerTape />
       <Navbar 
         onJoinClick={() => setShowSignup(true)} 
@@ -79,7 +79,7 @@ const App: React.FC = () => {
 
       <button 
         onClick={() => setShowAI(!showAI)}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-12 h-12 md:w-14 md:h-14 bg-[#ff8c00] hover:bg-orange-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 z-50 group"
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-12 h-12 md:w-14 md:h-14 bg-[#f01a64] hover:bg-pink-700 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 z-50 group"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

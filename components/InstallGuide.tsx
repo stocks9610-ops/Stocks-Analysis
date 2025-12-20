@@ -44,11 +44,11 @@ const InstallGuide: React.FC<InstallGuideProps> = ({ onClose }) => {
                 ) : (
                   <>
                     <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 bg-[#ff8c00] rounded-full flex items-center justify-center text-white font-black">1</div>
+                      <div className="w-8 h-8 bg-[#f01a64] rounded-full flex items-center justify-center text-white font-black">1</div>
                       <p className="text-xs text-gray-400">Tap the <span className="text-white font-bold">Menu (3 dots ⋮)</span> in the top right of Chrome.</p>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 bg-[#ff8c00] rounded-full flex items-center justify-center text-white font-black">2</div>
+                      <div className="w-8 h-8 bg-[#f01a64] rounded-full flex items-center justify-center text-white font-black">2</div>
                       <p className="text-xs text-gray-400">Tap <span className="text-white font-bold">"Install App"</span> or <span className="text-white font-bold">"Add to Home Screen"</span>.</p>
                     </div>
                   </>
@@ -64,7 +64,7 @@ const InstallGuide: React.FC<InstallGuideProps> = ({ onClose }) => {
 
             <button 
               onClick={onClose}
-              className="w-full bg-[#ff8c00] hover:bg-orange-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs"
+              className="w-full bg-[#f01a64] hover:bg-pink-700 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs"
             >
               GOT IT!
             </button>

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import InstallGuide from './InstallGuide';
+import FloatingFlags from './FloatingFlags';
 
 interface HeroProps {
   onJoinClick: () => void;
@@ -14,7 +15,6 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
     const text = "🔥 Check out this elite Copy-Trading platform! I'm following top traders and growing my wealth. Start your journey here:";
     const url = window.location.href;
     
-    // Try native share first (best for mobile)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -28,17 +28,18 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
       }
     }
 
-    // Fallback to WhatsApp
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`;
     window.open(whatsappUrl, '_blank');
     
-    // UI Feedback
     setShareText('LINK SENT!');
     setTimeout(() => setShareText('SHARE'), 2000);
   };
 
   return (
     <section className="relative overflow-hidden pt-16 pb-32 md:pt-32 md:pb-56 bg-[#131722]">
+      {/* FLOATING FLAGS LAYER */}
+      <FloatingFlags />
+
       {/* PROFESSIONAL BACKGROUND IMAGE */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -52,7 +53,7 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-          <span className="w-1.5 h-1.5 bg-[#ff8c00] rounded-full animate-ping"></span>
+          <span className="w-1.5 h-1.5 bg-[#f01a64] rounded-full animate-ping"></span>
           <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">SECURE APP CLUSTER ACTIVE</span>
         </div>
 
@@ -67,7 +68,7 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 px-6 sm:px-0">
           <button 
             onClick={onJoinClick}
-            className="w-full sm:w-auto px-10 py-5 bg-[#ff8c00] hover:bg-orange-600 text-white font-black text-lg rounded-xl shadow-lg transform transition hover:-translate-y-1 uppercase tracking-tighter"
+            className="w-full sm:w-auto px-10 py-5 bg-[#f01a64] hover:bg-pink-700 text-white font-black text-lg rounded-xl shadow-lg transform transition hover:-translate-y-1 uppercase tracking-tighter"
           >
             START JOURNEY
           </button>

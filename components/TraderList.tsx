@@ -105,28 +105,28 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
             <div 
               key={trader.id}
               onClick={() => setSelectedTrader(trader)}
-              className={`min-w-[280px] md:min-w-[320px] bg-[#1e222d] border border-[#2a2e39] rounded-2xl p-5 md:p-6 cursor-pointer transition-all hover:border-[#ff8c00] flex flex-col group snap-center ${
-                animatingTraders[trader.id] ? 'scale-[1.03] shadow-[0_0_50px_rgba(255,140,0,0.2)]' : ''
-              } ${trader.id === '0' ? 'border-[#ff8c00]/60 ring-1 ring-[#ff8c00]/20' : ''}`}
+              className={`min-w-[280px] md:min-w-[320px] bg-[#1e222d] border border-[#2a2e39] rounded-2xl p-5 md:p-6 cursor-pointer transition-all hover:border-[#f01a64] flex flex-col group snap-center ${
+                animatingTraders[trader.id] ? 'scale-[1.03] shadow-[0_0_50px_rgba(240,26,100,0.2)]' : ''
+              } ${trader.id === '0' ? 'border-[#f01a64]/60 ring-1 ring-[#f01a64]/20' : ''}`}
             >
               <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
                 <div className="relative">
-                  <img src={trader.avatar} alt={trader.name} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover ring-2 ring-[#ff8c00]/20 group-hover:ring-[#ff8c00]/60 transition-all shadow-xl" />
+                  <img src={trader.avatar} alt={trader.name} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover ring-2 ring-[#f01a64]/20 group-hover:ring-[#f01a64]/60 transition-all shadow-xl" />
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-[#00b36b] rounded-full border-2 border-[#1e222d] flex items-center justify-center">
                     <div className="w-1 md:w-1.5 h-1 md:h-1.5 bg-white rounded-full animate-pulse"></div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-white font-black text-base md:text-lg group-hover:text-[#ff8c00] transition-colors leading-none mb-1">{trader.name}</h3>
-                  <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest ${trader.id === '0' ? 'text-[#00b36b]' : 'text-[#ff8c00]'}`}>
+                  <h3 className="text-white font-black text-base md:text-lg group-hover:text-[#f01a64] transition-colors leading-none mb-1">{trader.name}</h3>
+                  <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest ${trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'}`}>
                     {trader.id === '0' ? 'Top Tier Authority' : 'Expert Tier'}
                   </span>
-                  <SocialIcons color={trader.id === '0' ? 'text-[#00b36b]' : 'text-[#ff8c00]'} />
+                  <SocialIcons color={trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'} />
                 </div>
               </div>
 
-              <div className="bg-[#131722] p-4 md:p-5 rounded-xl mb-6 md:mb-8 border border-[#2a2e39] group-hover:border-[#ff8c00]/30 transition-colors relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent pointer-events-none"></div>
+              <div className="bg-[#131722] p-4 md:p-5 rounded-xl mb-6 md:mb-8 border border-[#2a2e39] group-hover:border-[#f01a64]/30 transition-colors relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-transparent pointer-events-none"></div>
                 <span className="text-[8px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 md:mb-2 relative z-10">Realized Gains</span>
                 <div className={`text-xl md:text-3xl font-black transition-all duration-300 tabular-nums relative z-10 ${animatingTraders[trader.id] ? 'text-[#00b36b] scale-105' : 'text-white'}`}>
                   ${traderProfits[trader.id]?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -140,7 +140,7 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
                 </div>
                 <div className="bg-[#131722] p-2 md:p-3 rounded-lg border border-[#2a2e39] text-center">
                   <span className="text-[7px] md:text-[8px] text-gray-500 uppercase font-black block mb-1">Risk Rating</span>
-                  <span className="text-[#ff8c00] font-black text-xs md:text-sm">{trader.riskScore}/10</span>
+                  <span className="text-[#f01a64] font-black text-xs md:text-sm">{trader.riskScore}/10</span>
                 </div>
               </div>
 
@@ -156,7 +156,7 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
 
         <div className="mt-12 md:mt-20 pt-10 border-t border-[#2a2e39]">
           <div className="bg-[#1e222d] border border-[#2a2e39] rounded-2xl md:rounded-3xl p-6 md:p-10 max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#ff8c00]/10 text-[#ff8c00] rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#f01a64]/10 text-[#f01a64] rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-8 md:w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>

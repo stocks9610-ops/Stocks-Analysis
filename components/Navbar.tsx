@@ -14,13 +14,13 @@ const Navbar: React.FC<NavbarProps> = ({ onJoinClick, user, onLogout, onDashboar
   return (
     <nav className="bg-[#1e222d] border-b border-[#2a2e39] py-4 px-5 md:px-10 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-90">
       <div className="flex items-center gap-3 cursor-pointer" onClick={user ? onDashboardClick : onHomeClick}>
-        <div className="bg-[#ff8c00] p-1.5 rounded-lg">
+        <div className="bg-[#f01a64] p-1.5 rounded-lg">
           <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M13 3v11h7l-7 7V10H6l7-7z" />
           </svg>
         </div>
         <div>
-          <h1 className="text-xl font-black text-[#ff8c00] tracking-tighter uppercase leading-none">
+          <h1 className="text-xl font-black text-[#f01a64] tracking-tighter uppercase leading-none">
             CopyTrade
           </h1>
           <span className="text-[10px] text-gray-400 block -mt-1 font-semibold uppercase">Your Path to Freedom</span>
@@ -29,7 +29,7 @@ const Navbar: React.FC<NavbarProps> = ({ onJoinClick, user, onLogout, onDashboar
       
       <div className="hidden md:flex gap-8 text-[10px] font-black text-gray-500 uppercase tracking-widest">
         <button onClick={onHomeClick} className="hover:text-white transition-colors">Marketplace</button>
-        {user && <button onClick={onDashboardClick} className="text-[#ff8c00] hover:text-white transition-colors">My Dashboard</button>}
+        {user && <button onClick={onDashboardClick} className="text-[#f01a64] hover:text-white transition-colors">My Dashboard</button>}
         <a href="#" className="hover:text-white transition-colors">Markets</a>
         <a href="#" className="hover:text-white transition-colors">Academy</a>
       </div>
@@ -39,7 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({ onJoinClick, user, onLogout, onDashboar
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-xs text-white font-black uppercase tracking-tighter">{user.username}</span>
-              <span className={`text-[9px] font-black tracking-widest uppercase ${user.hasDeposited ? 'text-[#00b36b]' : 'text-[#ff8c00]'}`}>
+              <span className={`text-[9px] font-black tracking-widest uppercase ${user.hasDeposited ? 'text-[#00b36b]' : 'text-[#f01a64]'}`}>
                 {user.hasDeposited ? 'VERIFIED PARTNER' : 'NEW MEMBER'}
               </span>
             </div>
@@ -63,7 +63,7 @@ const Navbar: React.FC<NavbarProps> = ({ onJoinClick, user, onLogout, onDashboar
             </button>
             <button 
               onClick={onJoinClick}
-              className="bg-transparent border border-[#ff8c00] text-[#ff8c00] px-5 py-2.5 rounded-xl font-black text-[10px] hover:bg-[#ff8c00] hover:text-white transition-all shadow-lg uppercase tracking-widest"
+              className="bg-transparent border border-[#f01a64] text-[#f01a64] px-5 py-2.5 rounded-xl font-black text-[10px] hover:bg-[#f01a64] hover:text-white transition-all shadow-lg uppercase tracking-widest"
             >
               JOIN NOW
             </button>

@@ -8,7 +8,6 @@ const TickerTape: React.FC = () => {
     accuracy: 98.4
   });
 
-  // Subtle organic fluctuations to make it feel "real"
   useEffect(() => {
     const interval = setInterval(() => {
       setStats(prev => ({
@@ -32,7 +31,7 @@ const TickerTape: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="w-1.5 h-1.5 bg-[#ff8c00] rounded-full animate-pulse shadow-[0_0_8px_#ff8c00]"></div>
+          <div className="w-1.5 h-1.5 bg-[#f01a64] rounded-full animate-pulse shadow-[0_0_8px_#f01a64]"></div>
           <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">
             ACTIVE REPLICATORS: <span className="text-white">{stats.activeNodes.toLocaleString()}</span>
           </span>

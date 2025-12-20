@@ -15,7 +15,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     const existing = authService.getUser();
     if (isLogin && existing) {
       if (existing.email === email) {
@@ -32,7 +31,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
       username: username || 'Alpha_Trader',
       email: email,
       joinDate: new Date().toISOString(),
-      balance: 1000, // Initial Demo Balance
+      balance: 1000,
       hasDeposited: false,
       wins: 0,
       losses: 0,
@@ -46,14 +45,14 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-      <div className="bg-[#1e222d] border border-[#2a2e39] w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
+      <div className="bg-[#1e222d] border border-[#2a2e39] w-full max-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
         <div className="p-8 md:p-10">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
                 {isLogin ? 'Login Now' : 'Join Network'}
               </h2>
-              <p className="text-[10px] text-[#ff8c00] font-black uppercase tracking-[0.3em] mt-2">
+              <p className="text-[10px] text-[#f01a64] font-black uppercase tracking-[0.3em] mt-2">
                 Secure World Trade Platform Access
               </p>
             </div>
@@ -73,7 +72,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-[#ff8c00] transition-all font-bold"
+                  className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold"
                   placeholder="e.g. Rashid"
                 />
               </div>
@@ -86,7 +85,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-[#ff8c00] transition-all font-bold"
+                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold"
                 placeholder="name@example.com"
               />
             </div>
@@ -98,14 +97,14 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-[#ff8c00] transition-all font-bold"
+                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3.5 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold"
                 placeholder="••••••••"
               />
             </div>
 
             <button 
               type="submit"
-              className="w-full bg-[#ff8c00] hover:bg-orange-600 text-white font-black py-4 rounded-2xl shadow-xl transition-all mt-6 uppercase tracking-[0.2em]"
+              className="w-full bg-[#f01a64] hover:bg-pink-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all mt-6 uppercase tracking-[0.2em]"
             >
               {isLogin ? 'Login Now' : 'Create Account'}
             </button>
@@ -114,7 +113,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
           <div className="mt-8 pt-6 border-t border-[#2a2e39] text-center">
             <button 
               onClick={() => setIsLogin(!isLogin)}
-              className="text-xs text-[#ff8c00] font-black hover:text-white transition-colors uppercase tracking-widest"
+              className="text-xs text-[#f01a64] font-black hover:text-white transition-colors uppercase tracking-widest"
             >
               {isLogin ? "New user? Create Account" : "Existing user? Login Now"}
             </button>
