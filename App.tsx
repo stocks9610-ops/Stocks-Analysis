@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [showSignup, setShowSignup] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [view, setView] = useState<'landing' | 'dashboard'>('landing');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     const savedUser = authService.getUser();
@@ -24,6 +25,16 @@ const App: React.FC = () => {
       setUser(savedUser);
       setView('dashboard');
     }
+
+    // Capture the PWA install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', () => {});
+    };
   }, []);
 
   const handleLogout = () => {
@@ -47,6 +58,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Fallback for iOS or already installed
+      return true; // Signal to show the manual guide modal
+    }
+    return false;
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans selection:bg-pink-500/30 overflow-x-hidden bg-[#131722]">
       <TickerTape />
@@ -61,7 +87,7 @@ const App: React.FC = () => {
       <main className="flex-grow">
         {view === 'landing' ? (
           <>
-            <Hero onJoinClick={() => setShowSignup(true)} />
+            <Hero onJoinClick={() => setShowSignup(true)} onInstallRequest={handleInstallClick} />
             <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 -mt-16 md:-mt-24 relative z-10 mb-8 md:mb-12">
               <div className="w-full bg-[#1e222d] border border-[#2a2e39] rounded-2xl shadow-2xl overflow-hidden h-[450px] md:h-[600px] border-t-[#00b36b] border-t-2">
                 <MarketChart />

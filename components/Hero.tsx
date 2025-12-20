@@ -5,9 +5,10 @@ import FloatingFlags from './FloatingFlags';
 
 interface HeroProps {
   onJoinClick: () => void;
+  onInstallRequest: () => Promise<boolean>;
 }
 
-const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
+const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
   const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [shareText, setShareText] = useState('SHARE');
 
@@ -33,6 +34,13 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
     
     setShareText('LINK SENT!');
     setTimeout(() => setShareText('SHARE'), 2000);
+  };
+
+  const handleInstallClick = async () => {
+    const shouldShowGuide = await onInstallRequest();
+    if (shouldShowGuide) {
+      setShowInstallGuide(true);
+    }
   };
 
   return (
@@ -74,7 +82,7 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick }) => {
           </button>
           
           <button 
-            onClick={() => setShowInstallGuide(true)}
+            onClick={handleInstallClick}
             className="w-full sm:w-auto px-10 py-5 bg-[#00b36b] hover:bg-green-600 text-white font-black text-lg rounded-xl shadow-lg transform transition hover:-translate-y-1 uppercase tracking-tighter flex items-center justify-center gap-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
