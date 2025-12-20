@@ -1,0 +1,8 @@
+{
+  "name": "zeeni Trade-copy",
+  "description": "A sophisticated copy-trading platform powered by ZuluTrade aesthetics and Gemini AI insights for smarter social trading.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
