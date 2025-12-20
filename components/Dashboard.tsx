@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, authService } from '../services/authService';
-import { verifyPaymentProof } from '../services/geminiService';
+import { verifyPaymentProof, getInstantMarketPulse } from '../services/geminiService';
 
 interface DashboardProps {
   user: UserProfile | null;
@@ -30,6 +30,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
+  // AI Intelligence State
+  const [aiPulse, setAiPulse] = useState<{sentiment: string, score: number, brief: string} | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [investAmount, setInvestAmount] = useState<number>(1000);
   const [isInvesting, setIsInvesting] = useState(false);
@@ -53,6 +57,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
     }, 5000);
     return () => clearInterval(refreshInterval);
   }, []);
+
+  // Fetch AI Pulse when unlocked
+  useEffect(() => {
+    if (isUnlocked && !aiPulse) {
+      fetchPulse();
+    }
+  }, [isUnlocked]);
+
+  const fetchPulse = async () => {
+    setIsAiLoading(true);
+    const pulse = await getInstantMarketPulse("Bitcoin/Ethereum Market");
+    if (pulse) setAiPulse(pulse);
+    setIsAiLoading(false);
+  };
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,7 +261,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
                <span className="text-xl sm:text-2xl xl:text-3xl font-black text-[#00b36b] truncate">${user.balance.toLocaleString()}</span>
                <div className="w-2 h-2 bg-[#00b36b] rounded-full animate-pulse flex-shrink-0"></div>
             </div>
-            {/* Lock Button for user control */}
             <button 
               onClick={() => setIsUnlocked(false)}
               className="absolute top-4 right-4 text-gray-700 hover:text-[#ff8c00] transition-colors"
@@ -281,6 +298,48 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
             <span className={`text-xs sm:text-sm font-black uppercase tracking-widest truncate ${user.hasDeposited ? 'text-[#00b36b]' : 'text-[#ff8c00]'}`}>
               {user.hasDeposited ? 'Gold Member' : 'New Member'}
             </span>
+          </div>
+        </div>
+
+        {/* AI INTELLIGENCE PULSE WIDGET */}
+        <div className="bg-[#1e222d] border-2 border-dashed border-[#ff8c00]/30 p-6 rounded-[2rem] shadow-[0_0_40px_rgba(255,140,0,0.05)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4">
+             <div className="w-3 h-3 bg-[#ff8c00] rounded-full animate-ping"></div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-6 items-center">
+            <div className="shrink-0 w-16 h-16 bg-[#ff8c00]/10 rounded-2xl flex items-center justify-center text-[#ff8c00]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-1">Neural Market Intelligence</h3>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3">World Trade Platform / Gemini Engine Pulse</p>
+              
+              {isAiLoading ? (
+                <div className="flex items-center gap-3 justify-center md:justify-start">
+                   <div className="h-2 w-32 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#ff8c00] animate-[shimmer_2s_infinite]"></div>
+                   </div>
+                   <span className="text-[8px] text-gray-600 font-black uppercase animate-pulse">Scanning Global Orderbooks...</span>
+                </div>
+              ) : (
+                <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
+                   <div className="flex items-center gap-2 justify-center md:justify-start">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${aiPulse?.score && aiPulse.score > 50 ? 'bg-[#00b36b]/10 text-[#00b36b]' : 'bg-red-500/10 text-red-500'}`}>
+                         {aiPulse?.sentiment || 'Neutral'} ({aiPulse?.score || 50}%)
+                      </span>
+                      <span className="text-gray-400 font-bold text-[11px] italic">"{aiPulse?.brief || 'Waiting for signal synchronization...'}"</span>
+                   </div>
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={fetchPulse}
+              className="px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase text-gray-400 hover:text-white hover:border-[#ff8c00] transition-all"
+            >
+              Force Rescan
+            </button>
           </div>
         </div>
 

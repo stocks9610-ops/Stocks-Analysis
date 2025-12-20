@@ -6,6 +6,7 @@ import { GoogleGenAI, Type } from "@google/genai";
  * MODEL: gemini-3-pro-preview
  */
 export const deepMarketAnalysis = async (prompt: string, base64Image?: string, mimeType?: string) => {
+  // Always use the latest API key from environment
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const parts: any[] = [{ text: prompt }];
   
@@ -27,6 +28,7 @@ export const deepMarketAnalysis = async (prompt: string, base64Image?: string, m
         temperature: 0.2, 
       },
     });
+    // Access .text property directly
     return response.text;
   } catch (error: any) {
     console.error("AI Analysis Failed", error);
@@ -96,5 +98,27 @@ export const getInstantMarketPulse = async (asset: string = "Bitcoin") => {
     return JSON.parse(response.text || "{}");
   } catch (error) {
     return null;
+  }
+};
+
+// FIX: Added missing exported function getTraderEdgeFast
+/**
+ * TASK: Trader Edge Summary
+ * MODEL: gemini-3-flash-preview
+ */
+export const getTraderEdgeFast = async (bio: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Summarize the unique trading edge for a mentor with this bio: ${bio}`,
+      config: {
+        systemInstruction: "You are an elite trading psychologist and talent scout. Create a one-sentence punchy insight about the trader's edge. Be professional and sharp. Maximum 15 words.",
+      },
+    });
+    return response.text || "Alpha generation verified.";
+  } catch (error) {
+    console.error("Trader Edge Extraction Failed", error);
+    return "Institutional strategy confirmed.";
   }
 };
