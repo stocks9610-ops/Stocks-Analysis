@@ -44,26 +44,27 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isLogin && verificationStatus !== 'verified') {
-      alert("Please complete the human verification process first.");
+    if (isLogin) {
+      const user = authService.login(email, password);
+      if (user) {
+        onSuccess(user);
+        onClose();
+      } else {
+        alert("Invalid email or password. Please check your details.");
+      }
       return;
     }
 
-    const existing = authService.getUser();
-    if (isLogin) {
-      if (existing && existing.email === email) {
-        onSuccess(existing);
-        onClose();
-        return;
-      } else {
-        alert("Account not found or invalid credentials. Please sign up if you are new.");
-        return;
-      }
+    // Signup Logic
+    if (verificationStatus !== 'verified') {
+      alert("Please complete the human verification process first.");
+      return;
     }
 
     const newUser: UserProfile = {
       username: username || 'Alpha_Trader',
       email: email,
+      password: password, // Stored locally for offline verification
       phone: `${countryCode}${phone}`,
       joinDate: new Date().toISOString(),
       balance: 1000,
@@ -73,9 +74,14 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
       totalInvested: 0
     };
 
-    authService.saveUser(newUser);
-    onSuccess(newUser);
-    onClose();
+    const success = authService.register(newUser);
+    if (success) {
+      onSuccess(newUser);
+      onClose();
+    } else {
+      alert("An account with this email already exists. Please log in.");
+      setIsLogin(true);
+    }
   };
 
   return (
