@@ -3,42 +3,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#131722">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CopyTrade">
+    
+    <!-- PWA Icons & Manifest -->
     <link rel="manifest" href="manifest.json">
-    <title>CopyTrade - Social Trading Platform</title>
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2535/2535554.png">
+    
+    <title>CopyTrade - Elite Social Trading</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      :root {
+        --safe-area-inset-top: env(safe-area-inset-top);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom);
+      }
       body {
         background-color: #131722;
         color: #ffffff;
         -webkit-tap-highlight-color: transparent;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        overflow-x: hidden;
       }
+      
+      /* Futuristic Background Grid */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+          linear-gradient(rgba(255, 140, 0, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 140, 0, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: -1;
+        pointer-events: none;
+      }
+
       /* Custom scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #1e222d;
+        background: #131722;
       }
       ::-webkit-scrollbar-thumb {
         background: #2a2e39;
-        border-radius: 4px;
+        border-radius: 10px;
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #ff8c00;
       }
 
       /* Animations */
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-8px); }
-        75% { transform: translateX(8px); }
+      @keyframes pulse-border {
+        0%, 100% { border-color: rgba(255, 140, 0, 0.2); }
+        50% { border-color: rgba(255, 140, 0, 0.6); }
       }
-      .animate-shake {
-        animation: shake 0.2s ease-in-out 0s 2;
+      .animate-pulse-border {
+        animation: pulse-border 2s infinite;
+      }
+
+      .glass-morphism {
+        background: rgba(30, 34, 45, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
     </style>
 <script type="importmap">
@@ -52,18 +86,8 @@
 }
 </script>
 </head>
-<body>
+<body class="antialiased">
     <div id="root"></div>
-    <script>
-      // Enhanced Service Worker Registration
-      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
-        window.addEventListener('load', () => {
-          // Using relative path './sw.js' instead of '/sw.js' to prevent origin mismatch in preview frames
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered successfully'))
-            .catch(err => console.debug('Service Worker registration skipped or blocked in this environment:', err.message));
-        });
-      }
-    </script>
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
