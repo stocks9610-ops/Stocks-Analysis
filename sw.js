@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'copytrade-v2.2-bnb-update';
+const CACHE_NAME = 'copytrade-v2.3-optimized';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -20,6 +20,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
+            console.log('Clearing old cache:', cacheName);
             return caches.delete(cacheName); // Delete old caches
           }
         })

