@@ -1,6 +1,6 @@
 {
-  "name": "CopyTrade Elite Terminal",
-  "description": "Enterprise-grade social trading terminal with automated replication strategies.",
+  "name": "Zulu Trade Official",
+  "description": "copy-trading platform to explore top traders across crypto, forex, gold, and binary markets.",
   "requestFramePermissions": [
     "camera",
     "microphone"
