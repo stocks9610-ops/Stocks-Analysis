@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Trader } from '../types';
 import TraderProfileModal from './TraderProfileModal';
@@ -80,50 +79,13 @@ const MOCK_TRADERS: ExtendedTrader[] = [
     winRate: 92.1, avgDuration: '15 min', riskMethods: ['Hard SL', 'Grid Recovery'], 
     bio: 'Automated high-frequency signals tailored for the Binance engine. Extreme precision, high turnover.',
     category: 'binance'
-  },
-  { 
-    id: '8', name: 'Ether Oracle', 
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop', 
-    roi: 198.5, drawdown: 4.2, followers: 31000, weeks: 156, strategy: 'L2 Liquidity Flow',
-    type: 'Educator', experienceYears: 9, markets: ['ETH', 'L2 Tokens'], riskScore: 3,
-    winRate: 79.4, avgDuration: '1 month', riskMethods: ['Staking Hedge'], 
-    bio: 'Deep ecosystem analysis focusing on Ethereum and its second-layer scaling solutions for long-term growth.',
-    category: 'crypto'
-  },
-  { 
-    id: '9', name: 'Solana Speedster', 
-    avatar: 'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=400&fit=crop', 
-    roi: 512.4, drawdown: 22.8, followers: 18500, weeks: 42, strategy: 'Ecosystem Alpha Hunting',
-    type: 'Trader', experienceYears: 4, markets: ['SOL', 'Meme Coins'], riskScore: 10,
-    winRate: 62.8, avgDuration: '4 hours', riskMethods: ['Size Limitation'], 
-    bio: 'High-risk, high-reward trading within the Solana ecosystem. Focused on finding the next big explosive move.',
-    category: 'crypto'
-  },
-  { 
-    id: '10', name: 'Binary Queen ZA', 
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop', 
-    roi: 276.1, drawdown: 7.2, followers: 22400, weeks: 112, strategy: 'Psychological Level Bounce',
-    type: 'Trader', experienceYears: 7, markets: ['Binary Options', 'Forex'], riskScore: 5,
-    winRate: 84.7, avgDuration: '2 min', riskMethods: ['ATR Filtering'], 
-    bio: 'Cape Town based expert focusing on standard binary expiry cycles using pure price action and support/resistance.',
-    category: 'binary'
-  },
-  { 
-    id: '11', name: 'Profit Pilot 247', 
-    avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=400&h=400&fit=crop', 
-    roi: 334.8, drawdown: 9.5, followers: 14200, weeks: 68, strategy: 'Momentum Divergence',
-    type: 'Analyst', experienceYears: 8, markets: ['Binary Options'], riskScore: 6,
-    winRate: 81.3, avgDuration: '10 min', riskMethods: ['Trend-Only Alignment'], 
-    bio: 'Strict discipline approach to binary options. We only enter when momentum and volume are fully aligned.',
-    category: 'binary'
   }
 ];
 
 const SocialIcons: React.FC<{ color: string }> = ({ color }) => (
-  <div className="flex gap-2 mt-2 opacity-60">
-    <svg className={`w-3 h-3 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-    <svg className={`w-3 h-3 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.462 8.27l-1.56 7.42c-.116.545-.44.68-.895.425l-2.37-1.75-1.145 1.1c-.125.127-.23.234-.473.234l.17-2.42 4.41-3.98c.19-.17-.04-.26-.297-.09l-5.45 3.43-2.34-.73c-.51-.16-.52-.51.107-.756l9.15-3.53c.42-.15.79.1.663.667z"/></svg>
-    <svg className={`w-3 h-3 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+  <div className="flex gap-1.5 mt-1.5 opacity-60">
+    <svg className={`w-2.5 h-2.5 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    <svg className={`w-2.5 h-2.5 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.462 8.27l-1.56 7.42c-.116.545-.44.68-.895.425l-2.37-1.75-1.145 1.1c-.125.127-.23.234-.473.234l.17-2.42 4.41-3.98c.19-.17-.04-.26-.297-.09l-5.45 3.43-2.34-.73c-.51-.16-.52-.51.107-.756l9.15-3.53c.42-.15.79.1.663.667z"/></svg>
   </div>
 );
 
@@ -136,7 +98,6 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
   const [traderProfits, setTraderProfits] = useState<Record<string, number>>({});
   const [animatingTraders, setAnimatingTraders] = useState<Record<string, boolean>>({});
   const [selectedTrader, setSelectedTrader] = useState<Trader | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initialProfits: Record<string, number> = {};
@@ -154,145 +115,89 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
       const baseIncrement = trader.id === '0' ? 850 : 250;
       const increment = baseIncrement + Math.random() * 1250;
       
-      setTraderProfits(prev => ({
-        ...prev,
-        [trader.id]: prev[trader.id] + increment
-      }));
-      
+      setTraderProfits(prev => ({ ...prev, [trader.id]: prev[trader.id] + increment }));
       setAnimatingTraders(prev => ({ ...prev, [trader.id]: true }));
       playProfitSound();
-      
-      setTimeout(() => {
-        setAnimatingTraders(prev => ({ ...prev, [trader.id]: false }));
-      }, 400);
+      setTimeout(() => setAnimatingTraders(prev => ({ ...prev, [trader.id]: false })), 400);
     }, 1200);
 
     return () => clearInterval(profitInterval);
   }, [activeCategory]);
 
-  const filteredTraders = MOCK_TRADERS.filter(t => t.category === activeCategory);
-
   return (
-    <section className="py-16 md:py-24 bg-[#131722] border-t border-[#2a2e39]">
+    <section className="py-12 md:py-24 bg-[#131722] border-t border-[#2a2e39]">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-6 md:mb-10">
-          <h2 className="text-3xl md:text-6xl font-black text-white mb-4 tracking-tighter uppercase italic">
-            Top Tier Performance
+        <div className="text-center mb-8 md:mb-10">
+          <h2 className="text-2xl md:text-6xl font-black text-white mb-4 tracking-tighter uppercase italic">
+            Elite Marketplace
           </h2>
           
-          <div className="flex flex-wrap justify-center gap-3 mt-6">
+          <div className="flex flex-wrap justify-center gap-2 mt-6">
             {(['binance', 'crypto', 'binary'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all border ${
+                className={`px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-black text-[8px] md:text-[10px] uppercase tracking-widest transition-all border ${
                   activeCategory === cat 
-                  ? 'bg-[#f01a64] text-white border-[#f01a64] shadow-[0_0_20px_rgba(240,26,100,0.4)]' 
-                  : 'bg-[#1e222d] text-gray-500 border-[#2a2e39] hover:border-[#f01a64]/50'
+                  ? 'bg-[#f01a64] text-white border-[#f01a64] shadow-lg' 
+                  : 'bg-[#1e222d] text-gray-500 border-[#2a2e39]'
                 }`}
               >
                 {cat}
               </button>
             ))}
           </div>
-          
-          <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] mt-8">
-            Replicating active {activeCategory} signals in real-time
-          </p>
         </div>
 
-        <div 
-          ref={scrollContainerRef}
-          className="flex overflow-x-auto gap-4 md:gap-6 py-4 px-2 no-scrollbar snap-x snap-mandatory scroll-smooth"
-        >
-          {filteredTraders.map(trader => (
+        <div className="flex overflow-x-auto gap-3 md:gap-6 py-4 px-1 no-scrollbar snap-x snap-mandatory">
+          {MOCK_TRADERS.filter(t => t.category === activeCategory).map(trader => (
             <div 
               key={trader.id}
               onClick={() => setSelectedTrader(trader)}
-              className={`min-w-[280px] md:min-w-[320px] bg-[#1e222d] border border-[#2a2e39] rounded-2xl p-5 md:p-6 cursor-pointer transition-all hover:border-[#f01a64] flex flex-col group snap-center ${
-                animatingTraders[trader.id] ? 'scale-[1.03] shadow-[0_0_50px_rgba(240,26,100,0.2)]' : ''
-              } ${trader.id === '0' ? 'border-[#f01a64]/60 ring-1 ring-[#f01a64]/20' : ''}`}
+              className={`min-w-[85vw] sm:min-w-[320px] md:min-w-[340px] bg-[#1e222d] border border-[#2a2e39] rounded-2xl p-5 md:p-6 cursor-pointer transition-all snap-center relative ${
+                animatingTraders[trader.id] ? 'border-[#f01a64] scale-[1.01]' : ''
+              }`}
             >
-              <div className="flex items-center gap-3 md:gap-4 mb-5">
-                <div className="relative">
-                  <img src={trader.avatar} alt={trader.name} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover ring-2 ring-[#f01a64]/20 group-hover:ring-[#f01a64]/60 transition-all shadow-xl" />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-[#00b36b] rounded-full border-2 border-[#1e222d] flex items-center justify-center">
-                    <div className="w-1 md:w-1.5 h-1 md:h-1.5 bg-white rounded-full animate-pulse"></div>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3 mb-4">
+                <img src={trader.avatar} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover ring-1 ring-white/10" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-black text-sm md:text-base group-hover:text-[#f01a64] transition-colors leading-none mb-1 truncate">{trader.name}</h3>
-                  <div className="flex flex-col gap-0.5">
-                    <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest ${trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'}`}>
-                      {trader.id === '0' ? 'Top Tier Authority' : 'Expert Tier'}
-                    </span>
-                    <span className="text-[7px] md:text-[8px] text-gray-500 font-bold uppercase tracking-tighter italic truncate">
-                      {trader.strategy}
-                    </span>
-                  </div>
-                  <SocialIcons color={trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'} />
+                  <h3 className="text-white font-black text-xs md:text-base truncate mb-0.5">{trader.name}</h3>
+                  <span className="text-[7px] md:text-[8px] text-[#f01a64] font-black uppercase tracking-widest block">{trader.type}</span>
+                  <SocialIcons color="text-[#f01a64]" />
                 </div>
               </div>
 
-              {/* TRADER BIO SECTION */}
-              <div className="px-1 mb-5">
-                <p className="text-[10px] text-gray-400 font-medium italic leading-relaxed line-clamp-2 h-8 overflow-hidden">
-                  "{trader.bio}"
-                </p>
-              </div>
-
-              <div className="bg-[#131722] p-4 md:p-5 rounded-xl mb-6 md:mb-8 border border-[#2a2e39] group-hover:border-[#f01a64]/30 transition-colors relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-transparent pointer-events-none"></div>
-                <span className="text-[8px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 md:mb-2 relative z-10">Realized Gains</span>
-                <div className={`text-xl md:text-3xl font-black transition-all duration-300 tabular-nums relative z-10 ${animatingTraders[trader.id] ? 'text-[#00b36b] scale-105' : 'text-white'}`}>
-                  ${traderProfits[trader.id]?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div className="bg-[#131722] p-4 rounded-xl mb-4 border border-[#2a2e39] tabular-nums">
+                <span className="text-[7px] md:text-[8px] text-gray-500 font-black uppercase tracking-widest block mb-1">Total Profits</span>
+                <div className={`text-xl md:text-2xl font-black ${animatingTraders[trader.id] ? 'text-[#00b36b]' : 'text-white'}`}>
+                  ${traderProfits[trader.id]?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
-                <div className="bg-[#131722] p-2 md:p-3 rounded-lg border border-[#2a2e39] text-center">
-                  <span className="text-[7px] md:text-[8px] text-gray-500 uppercase font-black block mb-1">ROI</span>
-                  <span className="text-[#00b36b] font-black text-xs md:text-sm">+{trader.roi}%</span>
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                <div className="bg-[#131722] p-2 rounded-lg border border-[#2a2e39] text-center">
+                  <span className="text-[7px] text-gray-500 uppercase font-black block">ROI</span>
+                  <span className="text-[#00b36b] font-black text-xs">+{trader.roi}%</span>
                 </div>
-                <div className="bg-[#131722] p-2 md:p-3 rounded-lg border border-[#2a2e39] text-center">
-                  <span className="text-[7px] md:text-[8px] text-gray-500 uppercase font-black block mb-1">Risk Rating</span>
-                  <span className="text-[#f01a64] font-black text-xs md:text-sm">{trader.riskScore}/10</span>
+                <div className="bg-[#131722] p-2 rounded-lg border border-[#2a2e39] text-center">
+                  <span className="text-[7px] text-gray-500 uppercase font-black block">Risk</span>
+                  <span className="text-[#f01a64] font-black text-xs">{trader.riskScore}/10</span>
                 </div>
               </div>
 
               <button 
-                className="mt-auto w-full py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg bg-[#00b36b] hover:bg-green-600 text-white shadow-green-900/20 active:scale-95"
+                className="w-full py-3.5 bg-[#00b36b] text-white rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95"
                 onClick={(e) => { e.stopPropagation(); onCopyClick(); }}
               >
-                COPY YOUR MENTOR
+                Copy Strategy
               </button>
             </div>
           ))}
         </div>
-
-        <div className="mt-12 md:mt-20 pt-10 border-t border-[#2a2e39]">
-          <div className="bg-[#1e222d] border border-[#2a2e39] rounded-2xl md:rounded-3xl p-6 md:p-10 max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#f01a64]/10 text-[#f01a64] rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-8 md:w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-            </div>
-            <div className="text-center md:text-left">
-              <h4 className="text-white font-black text-sm md:text-xl uppercase tracking-tighter mb-2">Zero Complexity. Full Autonomy.</h4>
-              <p className="text-[10px] md:text-xs text-gray-500 leading-relaxed font-black uppercase tracking-wide">
-                Experience seamless market engagement with no complex setup required. Trade alongside experienced market participants with absolute confidence. Our infrastructure supports instant USDT and TrustWallet integrations for rapid capital movement. We prioritize uncompromising security and total investor privacy. Securely.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {selectedTrader && (
-        <TraderProfileModal 
-          trader={selectedTrader} 
-          onClose={() => setSelectedTrader(null)} 
-          onCopyClick={onCopyClick}
-        />
+        <TraderProfileModal trader={selectedTrader} onClose={() => setSelectedTrader(null)} onCopyClick={onCopyClick} />
       )}
     </section>
   );

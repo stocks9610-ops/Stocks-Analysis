@@ -12,8 +12,8 @@ interface SupportBotProps {
 }
 
 const SUGGESTIONS = [
+  "How to earn the $500 referral bonus?",
   "How to withdraw my $1,000 bonus?",
-  "What is the security deposit?",
   "Is the 98% win rate guaranteed?",
   "Show me the deposit address."
 ];
