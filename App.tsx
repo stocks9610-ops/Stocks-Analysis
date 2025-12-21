@@ -222,14 +222,14 @@ const App: React.FC = () => {
         </div>
 
         <button 
-          onClick={() => { setShowSupport(!showSupport); setShowAI(false); }}
-          className="w-12 h-12 md:w-14 md:h-14 bg-[#00b36b] hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative"
-          title="Neural Support"
+          onClick={() => window.open('https://t.me/MentorwithZuluTrade_bot', '_blank')}
+          className="w-12 h-12 md:w-14 md:h-14 bg-[#0088cc] hover:bg-[#0077b5] rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative border border-white/20"
+          title="Mentor Bot"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          <svg className="h-6 w-6 md:h-7 md:w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+             <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.462 8.27l-1.56 7.42c-.116.545-.44.68-.895.425l-2.37-1.75-1.145 1.1c-.125.127-.23.234-.473.234l.17-2.42 4.41-3.98c.19-.17-.04-.26-.297-.09l-5.45 3.43-2.34-.73c-.51-.16-.52-.51.107-.756l9.15-3.53c.42-.15.79.1.663.667z"/>
           </svg>
-          <span className="absolute right-full mr-3 px-2 py-1 bg-[#00b36b] text-white text-[9px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">SUPPORT ACTIVE</span>
+          <span className="absolute right-full mr-3 px-2 py-1 bg-[#0088cc] text-white text-[9px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">MENTOR BOT</span>
         </button>
 
         <button 

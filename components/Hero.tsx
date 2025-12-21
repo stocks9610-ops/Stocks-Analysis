@@ -10,30 +10,21 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
   const [showInstallGuide, setShowInstallGuide] = useState(false);
-  const [shareText, setShareText] = useState('SHARE & EARN $500');
+  const [shareText, setShareText] = useState('SHARE & EARN $200');
 
   const handleShare = async () => {
-    const text = "🔥 Check out this elite Copy-Trading platform! I'm following top traders and growing my wealth. Join now to get a $1,000 sign-up bonus, and I get a $500 referral bonus when you start! 💸 Let's win together:";
+    // Specific text requested by user for Telegram popup
+    const text = "🔥 Earn $200 per referral! 💸\n\nInvite friends, they install the app, and YOU earn money! 💰\n\nStart your journey to financial freedom here:";
     const url = window.location.href;
     
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'CopyTrade - Earn $500 Bonus',
-          text: text,
-          url: url,
-        });
-        return;
-      } catch (err) {
-        console.log("Native share failed, falling back to Telegram");
-      }
-    }
-
+    // Telegram Share URL structure
     const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    
+    // Open Telegram immediately
     window.open(telegramUrl, '_blank');
     
-    setShareText('LINK SENT!');
-    setTimeout(() => setShareText('SHARE & EARN $500'), 2000);
+    setShareText('OPENING TELEGRAM...');
+    setTimeout(() => setShareText('SHARE & EARN $200'), 2000);
   };
 
   const handleInstallClick = async () => {
@@ -69,8 +60,26 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
           TRADE SMARTER,<br className="hidden sm:block" /> LIVE BETTER.
         </h1>
         
-        <p className="max-w-2xl mx-auto text-sm md:text-xl text-gray-400 mb-10 px-6 font-bold italic leading-relaxed">
-          Achieve financial freedom. Follow the pros and create a second income stream today. Simple, fast, and secure.
+        {/* NEW BENEFIT POINTS SECTION */}
+        <div className="flex flex-wrap justify-center gap-2 md:gap-4 max-w-5xl mx-auto mb-8 px-2">
+          {[
+            "Save Time & Automate",
+            "Daily Profit Withdrawals",
+            "100% Transparent Operations",
+            "Military-Grade Encryption",
+            "Elite Learning Opportunities"
+          ].map((benefit, i) => (
+            <div key={i} className="flex items-center gap-1.5 bg-[#1e222d]/80 border border-[#2a2e39] px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-bottom-3" style={{ animationDelay: `${i * 100}ms` }}>
+              <svg className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#00b36b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-[9px] md:text-[10px] font-black text-gray-200 uppercase tracking-widest">{benefit}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="max-w-3xl mx-auto text-sm md:text-xl text-gray-300 mb-10 px-6 font-bold leading-relaxed tracking-wide shadow-black drop-shadow-lg">
+          Achieve financial freedom. Follow the pros and create a second income stream today. <span className="text-[#f01a64] uppercase font-black text-base md:text-2xl border-b-2 border-[#f01a64]">Simple, fast, and secure.</span>
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-6 px-4">
@@ -94,10 +103,9 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
 
             <button 
               onClick={handleShare}
-              className="flex-1 sm:flex-none px-6 md:px-10 py-4 md:py-5 bg-white/5 backdrop-blur-md border border-white/10 text-white font-black text-base md:text-lg rounded-xl transition-all uppercase tracking-tighter flex items-center justify-center gap-2 active:scale-95 relative group overflow-hidden"
+              className="flex-1 sm:flex-none px-6 md:px-10 py-4 md:py-5 bg-[#0088cc] hover:bg-[#0077b5] text-white font-black text-base md:text-lg rounded-xl shadow-[0_0_20px_rgba(0,136,204,0.4)] transform transition active:scale-95 uppercase tracking-tighter flex items-center justify-center gap-2 group relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#0088cc] opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-[#0088cc]" fill="currentColor" viewBox="0 0 24 24">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.442c-.149.659-.537.818-1.089.508l-3.048-2.247-1.47 1.415c-.162.162-.299.3-.612.3l.219-3.106 5.651-5.108c.245-.219-.054-.341-.379-.126l-6.985 4.4-3.007-.941c-.654-.203-.667-.654.137-.967l11.75-4.529c.544-.203 1.02.123.836.761z"/>
               </svg>
               <span className="whitespace-nowrap">{shareText}</span>
