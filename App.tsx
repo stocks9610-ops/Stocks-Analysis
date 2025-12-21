@@ -13,6 +13,7 @@ import SignupModal from './components/SignupModal';
 import Dashboard from './components/Dashboard';
 import SuccessGallery from './components/SuccessGallery';
 import InfoSection from './components/InfoSection';
+import LiveActivityFeed from './components/LiveActivityFeed'; // NEW IMPORT
 import { authService, UserProfile } from './services/authService';
 
 const App: React.FC = () => {
@@ -185,6 +186,9 @@ const App: React.FC = () => {
         onHomeClick={() => user ? setView('dashboard') : setView('landing')}
       />
       
+      {/* GLOBAL FOMO FEED */}
+      <LiveActivityFeed />
+
       <main 
         className={`flex-grow transition-all duration-300 ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
         style={{ transform: `translateY(${pullDistance * 0.5}px)` }}

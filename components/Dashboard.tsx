@@ -8,15 +8,14 @@ interface DashboardProps {
   onUserUpdate: (u: UserProfile) => void;
 }
 
-// STRATEGY UPDATE:
-// Plans 1-2 are "Trial/Basic" (Low yield, works with Bonus).
-// Plans 3-5 are "VIP/Elite" (High yield, LOCKED until deposit).
+// STRATEGY UPDATE: High-Octane "Hook" Plans
+// Plan 1: $500 -> ~$600 (20% ROI) in 30 seconds.
 const INVESTMENT_PLANS = [
-  { id: 1, name: 'Starter Trial', duration: '30 Seconds', durationMs: 30000, minRet: 5, maxRet: 8, risk: 'Low', minInvest: 500, vip: false },
-  { id: 2, name: 'Basic Momentum', duration: '1 Minute', durationMs: 60000, minRet: 10, maxRet: 15, risk: 'Medium', minInvest: 1000, vip: false },
-  { id: 3, name: 'VIP Turbo Swing', duration: '5 Minutes', durationMs: 300000, minRet: 50, maxRet: 65, risk: 'Medium', minInvest: 2500, vip: true },
-  { id: 4, name: 'Elite Market Maker', duration: '1 Hour', durationMs: 3600000, minRet: 100, maxRet: 150, risk: 'High', minInvest: 5000, vip: true },
-  { id: 5, name: 'Whale Cycle (Pro)', duration: '4 Hours', durationMs: 14400000, minRet: 250, maxRet: 300, risk: 'High', minInvest: 10000, vip: true },
+  { id: 1, name: 'AI Flash Scalp', duration: '30 Seconds', durationMs: 30000, minRet: 20, maxRet: 25, risk: 'Low', minInvest: 500, vip: false },
+  { id: 2, name: 'Rapid Momentum', duration: '1 Minute', durationMs: 60000, minRet: 30, maxRet: 40, risk: 'Medium', minInvest: 1000, vip: false },
+  { id: 3, name: 'VIP Turbo Swing', duration: '5 Minutes', durationMs: 300000, minRet: 60, maxRet: 80, risk: 'Medium', minInvest: 2500, vip: true },
+  { id: 4, name: 'Elite Market Maker', duration: '1 Hour', durationMs: 3600000, minRet: 120, maxRet: 150, risk: 'High', minInvest: 5000, vip: true },
+  { id: 5, name: 'Whale Cycle (Pro)', duration: '4 Hours', durationMs: 14400000, minRet: 300, maxRet: 400, risk: 'High', minInvest: 10000, vip: true },
 ];
 
 const SCAN_ASSETS = ['BTC/USDT', 'XAU/USD (GOLD)', 'EUR/USD', 'NASDAQ 100', 'ETH/USDT'];
@@ -62,7 +61,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const depositSectionRef = useRef<HTMLDivElement>(null); // To auto-scroll to deposit
+  const depositSectionRef = useRef<HTMLDivElement>(null);
 
   const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
   const [withdrawNetworkId, setWithdrawNetworkId] = useState('trc20');
@@ -194,8 +193,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     if (!user.hasDeposited) {
       const selectedNet = NETWORKS.find(n => n.id === withdrawNetworkId)?.name || 'TRC-20';
       setWithdrawError(`Security Node Inactive. Deposit $500+ to verify wallet ownership before withdrawal.`);
-      
-      // Auto-scroll to deposit section to nudge them
       depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
@@ -222,7 +219,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     setSelectedPlanId(planId);
   };
 
-  // --- REWRITTEN ESCROW INVESTMENT LOGIC ---
   const startInvestment = () => {
     if (!user || selectedPlanId === null) return;
     const plan = INVESTMENT_PLANS.find(p => p.id === selectedPlanId);
@@ -297,8 +293,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       let currentPnL;
       
       if (progress < 0.2) {
-        // Dip
-        const spread = amount * 0.02; 
+        // Dip (-2% to -3%)
+        const spread = amount * 0.03; 
         currentPnL = -spread * Math.sin(progress * Math.PI * 2.5); 
       } else {
         // Rip
@@ -509,20 +505,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
 
         {/* LIVE LIQUIDITY TERMINAL (Replaces Active Trade Bar) */}
         {isInvesting && (
-          <div className="bg-[#0d1117] border-2 border-[#f01a64] rounded-2xl p-6 relative overflow-hidden font-mono shadow-[0_0_30px_rgba(240,26,100,0.2)]">
-            
+          <div className="bg-[#0d1117] border-2 border-[#f01a64] rounded-2xl p-6 relative overflow-hidden font-mono shadow-[0_0_30px_rgba(240,26,100,0.4)] transition-all duration-300">
+            {/* MATRIX RAIN EFFECT OVERLAY */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0, 179, 107, 0.1) 1px, transparent 1px)', backgroundSize: '100% 4px' }}></div>
+
             {/* TERMINAL HEADER */}
-            <div className="flex justify-between items-center mb-4 border-b border-[#2a2e39] pb-2">
+            <div className="flex justify-between items-center mb-4 border-b border-[#2a2e39] pb-2 relative z-10">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#f01a64] rounded-full animate-ping"></div>
-                <span className="text-[#f01a64] text-xs font-bold tracking-widest uppercase">LIVE EXECUTION TERMINAL</span>
+                <div className={`w-2 h-2 rounded-full ${tradeStatus === 'completed' ? 'bg-[#00b36b] animate-ping' : 'bg-[#f01a64] animate-pulse'}`}></div>
+                <span className={`${tradeStatus === 'completed' ? 'text-[#00b36b]' : 'text-[#f01a64]'} text-xs font-bold tracking-widest uppercase`}>
+                   {tradeStatus === 'completed' ? 'PROFIT SECURED' : 'LIVE EXECUTION TERMINAL'}
+                </span>
               </div>
               <span className="text-gray-500 text-[10px]">ETH-MAINNET BRIDGE</span>
             </div>
 
             {/* STAGE 1: BRIDGING LOGS */}
             {tradeStatus === 'bridging' && (
-              <div className="h-24 overflow-y-auto no-scrollbar space-y-1 text-xs">
+              <div className="h-24 overflow-y-auto no-scrollbar space-y-1 text-xs font-mono">
                 {terminalLogs.map((log, i) => (
                   <div key={i} className="text-[#00b36b] animate-in slide-in-from-left duration-200">{log}</div>
                 ))}
@@ -533,29 +533,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
             {/* STAGE 2: FILL FLASH */}
             {tradeStatus === 'filling' && (
               <div className="h-24 flex flex-col items-center justify-center animate-pulse">
-                <h3 className="text-2xl font-black text-[#00b36b] uppercase tracking-widest">ORDER FILLED</h3>
+                <h3 className="text-2xl font-black text-[#00b36b] uppercase tracking-widest drop-shadow-[0_0_10px_rgba(0,179,107,0.5)]">ORDER FILLED</h3>
                 <p className="text-white text-sm mt-1">BTC/USDT @ ${entryPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               </div>
             )}
 
             {/* STAGE 3: LIVE TICKER */}
             {(tradeStatus === 'live' || tradeStatus === 'completed') && (
-              <div className="h-24 flex flex-col items-center justify-center">
+              <div className="h-24 flex flex-col items-center justify-center relative z-10">
                 <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-1">Unrealized PnL</p>
-                <div className={`text-4xl md:text-5xl font-black tracking-tighter tabular-nums ${livePnL >= 0 ? 'text-[#00b36b]' : 'text-red-500'}`}>
+                <div className={`text-5xl md:text-6xl font-black tracking-tighter tabular-nums transition-colors duration-300 ${livePnL >= 0 ? 'text-[#00b36b] drop-shadow-[0_0_15px_rgba(0,179,107,0.4)]' : 'text-red-500'}`}>
                   {livePnL >= 0 ? '+' : ''}{livePnL.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                 </div>
                 {tradeStatus === 'completed' && (
-                  <div className="mt-2 text-[#f01a64] text-xs font-bold uppercase tracking-widest animate-pulse">
-                    SETTLEMENT COMPLETE - FUNDS RELEASED
+                  <div className="mt-2 text-[#00b36b] text-xs font-black uppercase tracking-[0.3em] animate-pulse border border-[#00b36b] px-3 py-1 rounded-full bg-[#00b36b]/10">
+                    FUNDS RELEASED TO WALLET
                   </div>
                 )}
               </div>
             )}
 
             {/* PROGRESS BAR FOOTER */}
-            <div className="mt-4 bg-[#1e222d] h-1.5 w-full rounded-full overflow-hidden">
-               <div className="bg-[#f01a64] h-full transition-all duration-300" style={{ width: `${activeTrade?.progress || 0}%` }}></div>
+            <div className="mt-4 bg-[#1e222d] h-1.5 w-full rounded-full overflow-hidden relative z-10">
+               <div className={`${tradeStatus === 'completed' ? 'bg-[#00b36b]' : 'bg-[#f01a64]'} h-full transition-all duration-300`} style={{ width: `${activeTrade?.progress || 0}%` }}></div>
             </div>
           </div>
         )}
