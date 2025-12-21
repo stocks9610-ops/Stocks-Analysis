@@ -42,7 +42,7 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
       {/* PROFESSIONAL BACKGROUND IMAGE */}
       <div className="absolute inset-0 z-0">
         <img 
-          src="workspace.jpg" 
+          src="https://images.unsplash.com/photo-1611974717525-587441658ee0?q=80&w=2070&auto=format&fit=crop" 
           alt="Professional World Trade Platform Setup" 
           className="w-full h-full object-cover opacity-25 scale-105"
         />

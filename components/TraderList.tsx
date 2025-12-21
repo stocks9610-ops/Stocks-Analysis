@@ -1,21 +1,22 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Trader } from '../types';
 import TraderProfileModal from './TraderProfileModal';
 import { playProfitSound } from '../services/audioService';
 
 interface ExtendedTrader extends Trader {
-  category: 'binance' | 'crypto' | 'binary';
+  category: 'crypto' | 'binary' | 'gold' | 'forex';
 }
 
 const MOCK_TRADERS: ExtendedTrader[] = [
   { 
     id: '0', name: 'Earn With Rashid (YouTuber)', 
-    avatar: 'rashid.png', 
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop', 
     roi: 285.4, drawdown: 2.1, followers: 125000, weeks: 312, strategy: 'Content-Driven Multi-Asset Quant',
     type: 'Trader', experienceYears: 12, markets: ['Crypto', 'Forex', 'Indices'], riskScore: 2,
     winRate: 91.2, avgDuration: '1 week', riskMethods: ['Community Sentiment Filtering', 'Volatility Guard'], 
     bio: 'The premier World Trade Platform profile for the Earn With Rashid network. We provide absolute transparency and consistent replication of elite market moves.',
-    category: 'binance'
+    category: 'crypto'
   },
   { 
     id: '1', name: 'Master Analyst Guy', 
@@ -24,7 +25,7 @@ const MOCK_TRADERS: ExtendedTrader[] = [
     type: 'Trader', experienceYears: 15, markets: ['Crypto', 'Forex'], riskScore: 3,
     winRate: 78.5, avgDuration: '3 months', riskMethods: ['Dynamic Stops'], 
     bio: 'Professional trend analyst focused on long-term capital appreciation through disciplined risk management.',
-    category: 'binance'
+    category: 'forex'
   },
   { 
     id: '2', name: 'Alpha Altcoin Daily', 
@@ -63,22 +64,22 @@ const MOCK_TRADERS: ExtendedTrader[] = [
     category: 'binary'
   },
   { 
-    id: '6', name: 'Binance Whale Watch', 
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop', 
-    roi: 245.9, drawdown: 3.1, followers: 67000, weeks: 210, strategy: 'Order Flow Imbalance',
-    type: 'Trader', experienceYears: 11, markets: ['Binance Spot', 'Futures'], riskScore: 4,
+    id: '6', name: 'Gold Trend Master', 
+    avatar: 'https://images.unsplash.com/photo-1610375461490-6d615d666d9b?w=400&h=400&fit=crop', 
+    roi: 245.9, drawdown: 3.1, followers: 67000, weeks: 210, strategy: 'XAU/USD Order Flow',
+    type: 'Trader', experienceYears: 11, markets: ['Gold', 'Commodities'], riskScore: 4,
     winRate: 85.2, avgDuration: '3 days', riskMethods: ['Volume Profile Analysis'], 
-    bio: 'Specialized in tracking large-scale institutional orders on Binance to ride the momentum of market makers.',
-    category: 'binance'
+    bio: 'Specialized in tracking large-scale institutional orders on Gold markets to ride the momentum of market makers.',
+    category: 'gold'
   },
   { 
-    id: '7', name: 'Quantum Scalper', 
+    id: '7', name: 'Forex Scalper Elite', 
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop', 
     roi: 389.2, drawdown: 11.4, followers: 12900, weeks: 88, strategy: 'Neural Grid Scalping',
-    type: 'Analyst', experienceYears: 6, markets: ['Binance Futures'], riskScore: 7,
+    type: 'Analyst', experienceYears: 6, markets: ['EUR/USD', 'GBP/JPY'], riskScore: 7,
     winRate: 92.1, avgDuration: '15 min', riskMethods: ['Hard SL', 'Grid Recovery'], 
-    bio: 'Automated high-frequency signals tailored for the Binance engine. Extreme precision, high turnover.',
-    category: 'binance'
+    bio: 'Automated high-frequency signals tailored for the Forex markets. Extreme precision, high turnover.',
+    category: 'forex'
   }
 ];
 
@@ -94,7 +95,7 @@ interface TraderListProps {
 }
 
 const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
-  const [activeCategory, setActiveCategory] = useState<'binance' | 'crypto' | 'binary'>('binance');
+  const [activeCategory, setActiveCategory] = useState<'crypto' | 'binary' | 'gold' | 'forex'>('crypto');
   const [traderProfits, setTraderProfits] = useState<Record<string, number>>({});
   const [animatingTraders, setAnimatingTraders] = useState<Record<string, boolean>>({});
   const [selectedTrader, setSelectedTrader] = useState<Trader | null>(null);
@@ -127,20 +128,25 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
   return (
     <section className="py-12 md:py-24 bg-[#131722] border-t border-[#2a2e39]">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-8 md:mb-10">
-          <h2 className="text-2xl md:text-6xl font-black text-white mb-4 tracking-tighter uppercase italic">
-            Elite Marketplace
+        <div className="text-center mb-10 md:mb-14 space-y-6">
+          <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
+            Elite Marketplace:<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-gray-600">Crypto, Binary, Gold & Forex</span>
           </h2>
           
-          <div className="flex flex-wrap justify-center gap-2 mt-6">
-            {(['binance', 'crypto', 'binary'] as const).map((cat) => (
+          <p className="max-w-3xl mx-auto text-sm md:text-lg text-gray-400 font-medium leading-relaxed">
+            Copy trading lets you automatically follow experienced traders. Choose a trader based on verified performance and trade <span className="text-[#00b36b] font-bold">risk-free</span> with our C-Level expert strategies. When you copy, it becomes a <span className="text-white font-bold">sure profit</span> opportunity. Connect your account seamlessly, and their trades are copied in real-time. You stay in control and can stop or change traders at any time.
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-3 mt-8">
+            {(['crypto', 'binary', 'gold', 'forex'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-black text-[8px] md:text-[10px] uppercase tracking-widest transition-all border ${
+                className={`px-8 py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all transform hover:-translate-y-1 active:scale-95 border-2 ${
                   activeCategory === cat 
-                  ? 'bg-[#f01a64] text-white border-[#f01a64] shadow-lg' 
-                  : 'bg-[#1e222d] text-gray-500 border-[#2a2e39]'
+                  ? 'bg-[#f01a64] text-white border-[#f01a64] shadow-[0_10px_30px_rgba(240,26,100,0.3)]' 
+                  : 'bg-[#1e222d] text-gray-400 border-[#2a2e39] hover:border-gray-500 hover:text-white'
                 }`}
               >
                 {cat}
@@ -154,39 +160,47 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
             <div 
               key={trader.id}
               onClick={() => setSelectedTrader(trader)}
-              className={`min-w-[85vw] sm:min-w-[320px] md:min-w-[340px] bg-[#1e222d] border border-[#2a2e39] rounded-2xl p-5 md:p-6 cursor-pointer transition-all snap-center relative ${
+              className={`min-w-[85vw] sm:min-w-[320px] md:min-w-[340px] bg-[#1e222d] border border-[#2a2e39] rounded-3xl p-6 cursor-pointer transition-all snap-center relative group hover:border-[#f01a64]/50 hover:shadow-2xl ${
                 animatingTraders[trader.id] ? 'border-[#f01a64] scale-[1.01]' : ''
               }`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <img src={trader.avatar} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover ring-1 ring-white/10" />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="relative">
+                  <img src={trader.avatar} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover ring-2 ring-white/5" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#00b36b] border-2 border-[#1e222d] rounded-full"></div>
+                </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-black text-xs md:text-base truncate mb-0.5">{trader.name}</h3>
-                  <span className="text-[7px] md:text-[8px] text-[#f01a64] font-black uppercase tracking-widest block">{trader.type}</span>
-                  <SocialIcons color="text-[#f01a64]" />
+                  <h3 className="text-white font-black text-sm md:text-base truncate mb-1 group-hover:text-[#f01a64] transition-colors">{trader.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] bg-[#f01a64]/10 text-[#f01a64] px-2 py-0.5 rounded font-black uppercase tracking-widest">{trader.type}</span>
+                    <SocialIcons color="text-gray-500" />
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-[#131722] p-4 rounded-xl mb-4 border border-[#2a2e39] tabular-nums">
-                <span className="text-[7px] md:text-[8px] text-gray-500 font-black uppercase tracking-widest block mb-1">Total Profits</span>
-                <div className={`text-xl md:text-2xl font-black ${animatingTraders[trader.id] ? 'text-[#00b36b]' : 'text-white'}`}>
+              <div className="bg-[#131722] p-5 rounded-2xl mb-5 border border-[#2a2e39] group-hover:border-white/10 transition-colors">
+                <div className="flex justify-between items-end mb-1">
+                  <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total Profits</span>
+                  <span className="text-[8px] text-[#00b36b] font-black uppercase tracking-widest animate-pulse">Live</span>
+                </div>
+                <div className={`text-2xl md:text-3xl font-black tracking-tight ${animatingTraders[trader.id] ? 'text-[#00b36b]' : 'text-white'}`}>
                   ${traderProfits[trader.id]?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mb-6">
-                <div className="bg-[#131722] p-2 rounded-lg border border-[#2a2e39] text-center">
-                  <span className="text-[7px] text-gray-500 uppercase font-black block">ROI</span>
-                  <span className="text-[#00b36b] font-black text-xs">+{trader.roi}%</span>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
+                  <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">ROI</span>
+                  <span className="text-[#00b36b] font-black text-sm">+{trader.roi}%</span>
                 </div>
-                <div className="bg-[#131722] p-2 rounded-lg border border-[#2a2e39] text-center">
-                  <span className="text-[7px] text-gray-500 uppercase font-black block">Risk</span>
-                  <span className="text-[#f01a64] font-black text-xs">{trader.riskScore}/10</span>
+                <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
+                  <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">Risk</span>
+                  <span className="text-[#f01a64] font-black text-sm">{trader.riskScore}/10</span>
                 </div>
               </div>
 
               <button 
-                className="w-full py-3.5 bg-[#00b36b] text-white rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95"
+                className="w-full py-4 bg-[#00b36b] hover:bg-green-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg transform transition active:scale-95 group-hover:shadow-[#00b36b]/20"
                 onClick={(e) => { e.stopPropagation(); onCopyClick(); }}
               >
                 Copy Strategy
