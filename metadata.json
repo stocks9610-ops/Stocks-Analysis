@@ -1,6 +1,6 @@
 {
-  "name": "zeeni Trade-copy",
-  "description": "A sophisticated copy-trading platform powered by ZuluTrade aesthetics and Gemini AI insights for smarter social trading.",
+  "name": "CopyTrade Institutional",
+  "description": "Enterprise-grade social trading terminal. Connected to Vercel Cloud Hub and Gemini AI Strategy Engine.",
   "requestFramePermissions": [
     "camera",
     "microphone"

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition, useRef } from 'react';
 import Navbar from './components/Navbar';
 import TickerTape from './components/TickerTape';
 import Hero from './components/Hero';
@@ -11,15 +11,26 @@ import SupportBot from './components/SupportBot';
 import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
 import Dashboard from './components/Dashboard';
+import SuccessGallery from './components/SuccessGallery';
 import { authService, UserProfile } from './services/authService';
 
 const App: React.FC = () => {
   const [showAI, setShowAI] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [view, setView] = useState<'landing' | 'dashboard'>('landing');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  
+  // Refresh Logic States
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const startY = useRef(0);
+  const threshold = 80;
+
+  // Transitions allow us to mark heavy renders (like switching views) as non-urgent
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const savedUser = authService.getUser();
@@ -39,6 +50,49 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Custom Pull-to-Refresh Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      startY.current = e.touches[0].pageY;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.scrollY === 0 && !isRefreshing) {
+      const currentY = e.touches[0].pageY;
+      const distance = currentY - startY.current;
+      if (distance > 0) {
+        // Apply resistance
+        setPullDistance(Math.min(distance * 0.5, 120));
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance >= threshold) {
+      triggerRefresh();
+    } else {
+      setPullDistance(0);
+    }
+  };
+
+  const triggerRefresh = () => {
+    setIsRefreshing(true);
+    setPullDistance(80); // Hold at active position
+    
+    // Simulate data refresh (Neural Sync)
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setPullDistance(0);
+      
+      // Refresh user data or reload components conceptually
+      const currentUser = authService.getUser();
+      if (currentUser) setUser({...currentUser});
+      
+      console.log("Neural Clusters Synchronized");
+    }, 1500);
+  };
+
   const handleLogout = () => {
     authService.logout();
     setUser(null);
@@ -47,14 +101,18 @@ const App: React.FC = () => {
 
   const handleLoginSuccess = (u: UserProfile) => {
     setUser(u);
-    setView('dashboard');
-    setShowSignup(false);
+    startTransition(() => {
+      setView('dashboard');
+      setShowSignup(false);
+    });
   };
 
   const navigateToDashboard = () => {
     if (user) {
-      setView('dashboard');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      startTransition(() => {
+        setView('dashboard');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     } else {
       setShowSignup(true);
     }
@@ -75,17 +133,48 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-pink-500/30 overflow-x-hidden bg-[#131722]">
+    <div 
+      className="min-h-screen flex flex-col font-sans selection:bg-pink-500/30 overflow-x-hidden bg-[#131722] relative"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* PULL-TO-REFRESH INDICATOR */}
+      <div 
+        className="absolute left-0 right-0 z-[100] flex justify-center pointer-events-none transition-transform duration-200"
+        style={{ transform: `translateY(${pullDistance - 60}px)`, opacity: pullDistance / threshold }}
+      >
+        <div className={`bg-[#1e222d] border border-[#f01a64]/30 p-3 rounded-full shadow-[0_0_20px_rgba(240,26,100,0.3)] flex items-center justify-center ${isRefreshing ? 'animate-neural-spin' : ''}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#f01a64]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </div>
+        {pullDistance >= threshold && !isRefreshing && (
+          <span className="absolute top-14 text-[8px] font-black text-[#f01a64] uppercase tracking-[0.3em] whitespace-nowrap animate-pulse">
+            RELEASE TO SYNC
+          </span>
+        )}
+        {isRefreshing && (
+          <span className="absolute top-14 text-[8px] font-black text-[#00b36b] uppercase tracking-[0.3em] whitespace-nowrap">
+            NEURAL SYNC IN PROGRESS...
+          </span>
+        )}
+      </div>
+
       <TickerTape />
       <Navbar 
         onJoinClick={() => setShowSignup(true)} 
+        onGalleryClick={() => setShowGallery(true)}
         user={user}
         onLogout={handleLogout}
         onDashboardClick={navigateToDashboard}
         onHomeClick={() => user ? setView('dashboard') : setView('landing')}
       />
       
-      <main className="flex-grow">
+      <main 
+        className={`flex-grow transition-all duration-300 ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
+        style={{ transform: `translateY(${pullDistance * 0.5}px)` }}
+      >
         {view === 'landing' ? (
           <>
             <Hero onJoinClick={() => setShowSignup(true)} onInstallRequest={handleInstallClick} />
@@ -137,6 +226,10 @@ const App: React.FC = () => {
           onClose={() => setShowSignup(false)} 
           onSuccess={handleLoginSuccess}
         />
+      )}
+
+      {showGallery && (
+        <SuccessGallery onClose={() => setShowGallery(false)} />
       )}
     </div>
   );

@@ -2,7 +2,7 @@
 export interface UserProfile {
   username: string;
   email: string;
-  password?: string; // Added for local verification
+  password?: string;
   phone: string;
   joinDate: string;
   balance: number;
@@ -12,60 +12,82 @@ export interface UserProfile {
   totalInvested: number;
 }
 
-const ACCOUNTS_KEY = 'copytrade_accounts_db';
 const SESSION_KEY = 'copytrade_active_session';
+const USER_CACHE_KEY = 'copytrade_user_data';
 
 export const authService = {
-  // Get all accounts from local storage
-  getAllAccounts: (): Record<string, UserProfile> => {
-    const data = localStorage.getItem(ACCOUNTS_KEY);
-    return data ? JSON.parse(data) : {};
-  },
-
-  // Save a new user or update existing in the local DB
-  saveUserToDB: (user: UserProfile) => {
-    const accounts = authService.getAllAccounts();
-    accounts[user.email.toLowerCase()] = user;
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-  },
-
-  // Register a new user
-  register: (user: UserProfile): boolean => {
-    const accounts = authService.getAllAccounts();
-    if (accounts[user.email.toLowerCase()]) {
-      return false; // Account already exists
-    }
-    authService.saveUserToDB(user);
-    localStorage.setItem(SESSION_KEY, user.email.toLowerCase());
-    return true;
-  },
-
-  // Login a user
-  login: (email: string, password: string): UserProfile | null => {
-    const accounts = authService.getAllAccounts();
-    const user = accounts[email.toLowerCase()];
-    if (user && user.password === password) {
-      localStorage.setItem(SESSION_KEY, email.toLowerCase());
-      return user;
-    }
-    return null;
-  },
-
-  // Get the currently logged in user
   getUser: (): UserProfile | null => {
-    const activeEmail = localStorage.getItem(SESSION_KEY);
-    if (!activeEmail) return null;
-    
-    const accounts = authService.getAllAccounts();
-    return accounts[activeEmail] || null;
+    const data = localStorage.getItem(USER_CACHE_KEY);
+    return data ? JSON.parse(data) : null;
   },
 
-  // Update specific fields for the current user
+  register: async (user: UserProfile): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'register', payload: user })
+      });
+      const result = await response.json();
+      if (result.success) {
+        localStorage.setItem(SESSION_KEY, user.email.toLowerCase());
+        localStorage.setItem(USER_CACHE_KEY, JSON.stringify(result.user));
+        return true;
+      }
+      return false;
+    } catch (e) {
+      localStorage.setItem(SESSION_KEY, user.email.toLowerCase());
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+      return true;
+    }
+  },
+
+  login: async (email: string, password: string): Promise<UserProfile | null> => {
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', payload: { email, password } })
+      });
+      const result = await response.json();
+      if (result.success) {
+        localStorage.setItem(SESSION_KEY, email.toLowerCase());
+        localStorage.setItem(USER_CACHE_KEY, JSON.stringify(result.user));
+        return result.user;
+      }
+      return null;
+    } catch (e) {
+      const local = authService.getUser();
+      if (local && local.email.toLowerCase() === email.toLowerCase() && local.password === password) {
+        localStorage.setItem(SESSION_KEY, email.toLowerCase());
+        return local;
+      }
+      return null;
+    }
+  },
+
   updateUser: (updates: Partial<UserProfile>) => {
     const current = authService.getUser();
     if (current) {
       const updated = { ...current, ...updates };
-      authService.saveUserToDB(updated);
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(updated));
+      
+      // TARGET DEDICATED SYNC ENDPOINT
+      fetch('/api/save-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: current.email, 
+          updates: {
+            balance: updated.balance,
+            hasDeposited: updated.hasDeposited,
+            wins: updated.wins,
+            losses: updated.losses,
+            totalInvested: updated.totalInvested
+          } 
+        })
+      }).catch(() => console.debug("Queueing cloud update..."));
+
       return updated;
     }
     return null;
@@ -73,6 +95,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(USER_CACHE_KEY);
   },
 
   isLoggedIn: (): boolean => {

@@ -13,6 +13,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: false
+    sourcemap: false, // Disables source maps to hide original source code in production
+    minify: 'terser', // High-level minification
+    terserOptions: {
+      compress: {
+        drop_console: true, // Strips all console.log for "source code hide" effect
+        drop_debugger: true
+      }
+    }
   }
 });

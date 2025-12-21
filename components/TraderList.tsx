@@ -63,7 +63,6 @@ const MOCK_TRADERS: ExtendedTrader[] = [
     bio: 'High-frequency binary execution focused on volatility spikes and immediate profit extraction.',
     category: 'binary'
   },
-  // ADDING 20 MORE TRADERS
   { 
     id: '6', name: 'Binance Whale Watch', 
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop', 
@@ -116,132 +115,6 @@ const MOCK_TRADERS: ExtendedTrader[] = [
     type: 'Analyst', experienceYears: 8, markets: ['Binary Options'], riskScore: 6,
     winRate: 81.3, avgDuration: '10 min', riskMethods: ['Trend-Only Alignment'], 
     bio: 'Strict discipline approach to binary options. We only enter when momentum and volume are fully aligned.',
-    category: 'binary'
-  },
-  { 
-    id: '12', name: 'Binance Legend 88', 
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=400&fit=crop', 
-    roi: 421.9, drawdown: 18.2, followers: 92000, weeks: 245, strategy: 'Aggressive Perpetual Longs',
-    type: 'Trader', experienceYears: 13, markets: ['Binance Futures'], riskScore: 8,
-    winRate: 71.5, avgDuration: '12 hours', riskMethods: ['Leverage Adjustment'], 
-    bio: 'Master of the Binance liquidations. I buy the fear and sell the greed with maximum efficiency.',
-    category: 'binance'
-  },
-  { 
-    id: '13', name: 'Stablecoin Strategist', 
-    avatar: 'https://images.unsplash.com/photo-1546525848-3ce03ca516f6?w=400&h=400&fit=crop', 
-    roi: 85.4, drawdown: 0.8, followers: 12000, weeks: 188, strategy: 'Delta-Neutral Arbitrage',
-    type: 'Educator', experienceYears: 10, markets: ['USDT', 'USDC', 'DAI'], riskScore: 1,
-    winRate: 99.1, avgDuration: 'Variable', riskMethods: ['Cross-Exchange Hedge'], 
-    bio: 'Low volatility, consistent growth using sophisticated arbitrage between stablecoins and exchange premiums.',
-    category: 'binance'
-  },
-  { 
-    id: '14', name: 'DeFi Degenerate Elite', 
-    avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=400&h=400&fit=crop', 
-    roi: 642.3, drawdown: 35.5, followers: 41000, weeks: 72, strategy: 'Yield Farm Rotation',
-    type: 'Analyst', experienceYears: 5, markets: ['DEX Tokens', 'Farms'], riskScore: 10,
-    winRate: 55.4, avgDuration: '2 days', riskMethods: ['Aggressive Compounding'], 
-    bio: 'Rotating capital through the highest-yielding verified protocols. Fast in, fast out, maximum alpha.',
-    category: 'crypto'
-  },
-  { 
-    id: '15', name: 'BTC Maxi Pro', 
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop', 
-    roi: 125.7, drawdown: 15.2, followers: 88500, weeks: 412, strategy: 'HODL Plus Covered Calls',
-    type: 'Educator', experienceYears: 14, markets: ['Bitcoin'], riskScore: 3,
-    winRate: 94.2, avgDuration: 'Years', riskMethods: ['Multi-Sig Custody'], 
-    bio: 'Long-term Bitcoin focus using options to generate income while maintaining a large spot position.',
-    category: 'crypto'
-  },
-  { 
-    id: '16', name: 'OTC King Pin', 
-    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=400&fit=crop', 
-    roi: 218.4, drawdown: 5.5, followers: 16700, weeks: 145, strategy: 'Bulk Order Front-Running',
-    type: 'Trader', experienceYears: 9, markets: ['Large Cap Crypto'], riskScore: 4,
-    winRate: 88.7, avgDuration: '1 day', riskMethods: ['Privacy Guard'], 
-    bio: 'Capitalizing on large OTC desk movements before they hit the open market. Secure and calculated.',
-    category: 'binance'
-  },
-  { 
-    id: '17', name: 'Micro-Cap Scout', 
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop', 
-    roi: 782.1, drawdown: 42.1, followers: 32000, weeks: 54, strategy: 'Gem Identification',
-    type: 'Analyst', experienceYears: 4, markets: ['Micro-caps', 'New Listings'], riskScore: 10,
-    winRate: 48.2, avgDuration: '1 week', riskMethods: ['Stop Loss at Entry'], 
-    bio: 'I hunt for projects with 100x potential. Most will fail, but the winners pay for everything 100 times over.',
-    category: 'crypto'
-  },
-  { 
-    id: '18', name: 'Binary Sniper Elite', 
-    avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=400&h=400&fit=crop', 
-    roi: 305.4, drawdown: 10.2, followers: 28900, weeks: 132, strategy: 'News Event Fade',
-    type: 'Trader', experienceYears: 10, markets: ['Binary Options', 'Indices'], riskScore: 7,
-    winRate: 77.4, avgDuration: '5 min', riskMethods: ['News Filter'], 
-    bio: 'Specialized in trading the immediate aftermath of major economic releases on binary platforms.',
-    category: 'binary'
-  },
-  { 
-    id: '19', name: 'Indicator Master', 
-    avatar: 'https://images.unsplash.com/photo-1534308143481-c550951ad49a?w=400&h=400&fit=crop', 
-    roi: 188.2, drawdown: 4.5, followers: 15600, weeks: 94, strategy: 'Proprietary AI Indicator',
-    type: 'Educator', experienceYears: 7, markets: ['Forex', 'Binary'], riskScore: 4,
-    winRate: 82.1, avgDuration: '1 min', riskMethods: ['Signal Confirmation'], 
-    bio: 'Creator of the "World Trade Pulse" indicator. Simple green/red light signals for binary success.',
-    category: 'binary'
-  },
-  { 
-    id: '20', name: 'Binance Bot Builder', 
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop', 
-    roi: 312.5, drawdown: 8.4, followers: 44100, weeks: 176, strategy: 'Mean Reversion Bot',
-    type: 'Trader', experienceYears: 8, markets: ['Binance Spot'], riskScore: 5,
-    winRate: 89.8, avgDuration: '4 hours', riskMethods: ['Automated Stops'], 
-    bio: 'My algorithms never sleep. They harvest small profits across hundreds of pairs on Binance daily.',
-    category: 'binance'
-  },
-  { 
-    id: '21', name: 'Cardano Captain', 
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop', 
-    roi: 112.4, drawdown: 6.2, followers: 18900, weeks: 120, strategy: 'Scientific Investing',
-    type: 'Educator', experienceYears: 11, markets: ['ADA', 'Cardano Native Assets'], riskScore: 2,
-    winRate: 76.5, avgDuration: '6 months', riskMethods: ['Cold Storage Staking'], 
-    bio: 'Patient, long-term approach to the Cardano ecosystem focusing on peer-reviewed development cycles.',
-    category: 'crypto'
-  },
-  { 
-    id: '22', name: 'Binary Flow Expert', 
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop', 
-    roi: 242.1, drawdown: 6.8, followers: 11200, weeks: 78, strategy: 'VWAP Deviation',
-    type: 'Analyst', experienceYears: 6, markets: ['Binary Options'], riskScore: 5,
-    winRate: 83.3, avgDuration: '3 min', riskMethods: ['Volatility Sizing'], 
-    bio: 'I use volume-weighted average price to identify binary exhaustion points. Very high strike rate.',
-    category: 'binary'
-  },
-  { 
-    id: '23', name: 'Meme Mogul', 
-    avatar: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=400&fit=crop', 
-    roi: 945.8, drawdown: 52.1, followers: 56000, weeks: 28, strategy: 'Viral Sentiment Tracker',
-    type: 'Trader', experienceYears: 3, markets: ['DOGE', 'PEPE', 'SHIB'], riskScore: 10,
-    winRate: 41.5, avgDuration: '1 hour', riskMethods: ['Moon Bag Allocation'], 
-    bio: 'I trade the internet. If it’s trending on X, I’m in. High stakes, astronomical returns for the brave.',
-    category: 'crypto'
-  },
-  { 
-    id: '24', name: 'Scalp Sensei', 
-    avatar: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=400&fit=crop', 
-    roi: 176.4, drawdown: 3.2, followers: 19500, weeks: 142, strategy: 'Heikin Ashi Scalp',
-    type: 'Trader', experienceYears: 9, markets: ['Forex', 'Binance Futures'], riskScore: 3,
-    winRate: 88.2, avgDuration: '5 min', riskMethods: ['Trailing Profits'], 
-    bio: 'Slow and steady wins the race. I take dozens of small wins every single day with almost no drawdown.',
-    category: 'binance'
-  },
-  { 
-    id: '25', name: 'Binary Bolt', 
-    avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=400&h=400&fit=crop', 
-    roi: 456.2, drawdown: 14.5, followers: 13400, weeks: 32, strategy: '60-Second Reversal',
-    type: 'Trader', experienceYears: 5, markets: ['Binary Options'], riskScore: 9,
-    winRate: 72.8, avgDuration: '1 min', riskMethods: ['Fixed Stake Only'], 
-    bio: 'Lightning-fast binary execution. We target high-velocity candle reversals for quick 80% returns.',
     category: 'binary'
   }
 ];
@@ -307,7 +180,6 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
             Top Tier Performance
           </h2>
           
-          {/* CATEGORY FILTER BUTTONS */}
           <div className="flex flex-wrap justify-center gap-3 mt-6">
             {(['binance', 'crypto', 'binary'] as const).map((cat) => (
               <button
@@ -341,20 +213,32 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
                 animatingTraders[trader.id] ? 'scale-[1.03] shadow-[0_0_50px_rgba(240,26,100,0.2)]' : ''
               } ${trader.id === '0' ? 'border-[#f01a64]/60 ring-1 ring-[#f01a64]/20' : ''}`}
             >
-              <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+              <div className="flex items-center gap-3 md:gap-4 mb-5">
                 <div className="relative">
                   <img src={trader.avatar} alt={trader.name} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover ring-2 ring-[#f01a64]/20 group-hover:ring-[#f01a64]/60 transition-all shadow-xl" />
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-[#00b36b] rounded-full border-2 border-[#1e222d] flex items-center justify-center">
                     <div className="w-1 md:w-1.5 h-1 md:h-1.5 bg-white rounded-full animate-pulse"></div>
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-white font-black text-base md:text-lg group-hover:text-[#f01a64] transition-colors leading-none mb-1">{trader.name}</h3>
-                  <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest ${trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'}`}>
-                    {trader.id === '0' ? 'Top Tier Authority' : 'Expert Tier'}
-                  </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-white font-black text-sm md:text-base group-hover:text-[#f01a64] transition-colors leading-none mb-1 truncate">{trader.name}</h3>
+                  <div className="flex flex-col gap-0.5">
+                    <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest ${trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'}`}>
+                      {trader.id === '0' ? 'Top Tier Authority' : 'Expert Tier'}
+                    </span>
+                    <span className="text-[7px] md:text-[8px] text-gray-500 font-bold uppercase tracking-tighter italic truncate">
+                      {trader.strategy}
+                    </span>
+                  </div>
                   <SocialIcons color={trader.id === '0' ? 'text-[#00b36b]' : 'text-[#f01a64]'} />
                 </div>
+              </div>
+
+              {/* TRADER BIO SECTION */}
+              <div className="px-1 mb-5">
+                <p className="text-[10px] text-gray-400 font-medium italic leading-relaxed line-clamp-2 h-8 overflow-hidden">
+                  "{trader.bio}"
+                </p>
               </div>
 
               <div className="bg-[#131722] p-4 md:p-5 rounded-xl mb-6 md:mb-8 border border-[#2a2e39] group-hover:border-[#f01a64]/30 transition-colors relative overflow-hidden">

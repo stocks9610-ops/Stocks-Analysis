@@ -27,6 +27,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
   const [phone, setPhone] = useState('');
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'verified'>('idle');
   const [isLogin, setIsLogin] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleVerifyHuman = () => {
     if (!phone || phone.length < 7) {
@@ -41,16 +42,19 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
     }, 2500);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     
     if (isLogin) {
-      const user = authService.login(email, password);
+      const user = await authService.login(email, password);
       if (user) {
         onSuccess(user);
-        onClose();
       } else {
-        alert("Invalid email or password. Please check your details.");
+        alert("Authentication failed. Invalid email or password.");
+        setIsSubmitting(false);
       }
       return;
     }
@@ -58,13 +62,14 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
     // Signup Logic
     if (verificationStatus !== 'verified') {
       alert("Please complete the human verification process first.");
+      setIsSubmitting(false);
       return;
     }
 
     const newUser: UserProfile = {
       username: username || 'Alpha_Trader',
       email: email,
-      password: password, // Stored locally for offline verification
+      password: password, 
       phone: `${countryCode}${phone}`,
       joinDate: new Date().toISOString(),
       balance: 1000,
@@ -74,19 +79,19 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
       totalInvested: 0
     };
 
-    const success = authService.register(newUser);
+    const success = await authService.register(newUser);
     if (success) {
       onSuccess(newUser);
-      onClose();
     } else {
-      alert("An account with this email already exists. Please log in.");
+      alert("Cloud cluster rejection. Email may already be indexed.");
       setIsLogin(true);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-      <div className="bg-[#1e222d] border border-[#2a2e39] w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
+      <div className="bg-[#1e222d] border border-[#2a2e39] w-full max-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
         <div className="p-8 md:p-10">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -97,7 +102,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                 {isLogin ? 'Access your trading terminal' : 'Join the elite replication network'}
               </p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-white transition-all p-2 bg-white/5 rounded-full">
+            <button onClick={onClose} className="text-gray-500 hover:text-white transition-all p-2 bg-white/5 rounded-full">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -111,9 +116,10 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                 <input 
                   type="text" 
                   required
+                  disabled={isSubmitting}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm"
+                  className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm disabled:opacity-50"
                   placeholder="e.g. Rashid"
                 />
               </div>
@@ -124,9 +130,10 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
               <input 
                 type="email" 
                 required
+                disabled={isSubmitting}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm"
+                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm disabled:opacity-50"
                 placeholder="name@example.com"
               />
             </div>
@@ -137,8 +144,9 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                 <div className="flex gap-2">
                   <select 
                     value={countryCode}
+                    disabled={isSubmitting}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="bg-[#131722] border border-[#2a2e39] rounded-2xl px-3 py-3 text-white focus:outline-none focus:border-[#f01a64] font-bold text-xs appearance-none cursor-pointer"
+                    className="bg-[#131722] border border-[#2a2e39] rounded-2xl px-3 py-3 text-white focus:outline-none focus:border-[#f01a64] font-bold text-xs appearance-none cursor-pointer disabled:opacity-50"
                   >
                     {COUNTRY_CODES.map(c => (
                       <option key={c.code} value={c.code}>{c.code} ({c.country})</option>
@@ -147,9 +155,10 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                   <input 
                     type="tel" 
                     required
+                    disabled={isSubmitting}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="flex-1 bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm"
+                    className="flex-1 bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm disabled:opacity-50"
                     placeholder="300 1234567"
                   />
                 </div>
@@ -161,9 +170,10 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
               <input 
                 type="password" 
                 required
+                disabled={isSubmitting}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm"
+                className="w-full bg-[#131722] border border-[#2a2e39] rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-[#f01a64] transition-all font-bold text-sm disabled:opacity-50"
                 placeholder="••••••••"
               />
             </div>
@@ -173,8 +183,9 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
                 {verificationStatus === 'idle' && (
                   <button 
                     type="button"
+                    disabled={isSubmitting}
                     onClick={handleVerifyHuman}
-                    className="w-full bg-white/5 border border-[#f01a64]/30 text-[#f01a64] font-black py-3 rounded-2xl hover:bg-[#f01a64]/10 transition-all uppercase tracking-widest text-[10px]"
+                    className="w-full bg-white/5 border border-[#f01a64]/30 text-[#f01a64] font-black py-3 rounded-2xl hover:bg-[#f01a64]/10 transition-all uppercase tracking-widest text-[10px] disabled:opacity-50"
                   >
                     Run Human Verification
                   </button>
@@ -202,19 +213,35 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
             <div className="space-y-3 pt-4">
               <button 
                 type="submit"
-                className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all uppercase tracking-[0.2em] text-xs ${(!isLogin && verificationStatus !== 'verified') ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-[#f01a64] hover:bg-pink-700 text-white'}`}
+                disabled={isSubmitting || (!isLogin && verificationStatus !== 'verified')}
+                className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 ${
+                  isSubmitting || (!isLogin && verificationStatus !== 'verified') 
+                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                  : 'bg-[#f01a64] hover:bg-pink-700 text-white'
+                }`}
               >
-                {isLogin ? 'Authenticate Access' : 'Create Account'}
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Cloud Sync Active...</span>
+                  </>
+                ) : (
+                  isLogin ? 'Authenticate Access' : 'Create Account'
+                )}
               </button>
               
               <div className="text-center">
                 <button 
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setVerificationStatus('idle');
                   }}
-                  className="text-[10px] text-gray-500 hover:text-[#f01a64] font-black uppercase tracking-widest transition-colors py-2"
+                  className="text-[10px] text-gray-500 hover:text-[#f01a64] font-black uppercase tracking-widest transition-colors py-2 disabled:opacity-50"
                 >
                   {isLogin ? "Don't have an account? Join Now" : "Already registered? Log in"}
                 </button>

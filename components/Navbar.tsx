@@ -4,13 +4,14 @@ import { UserProfile } from '../services/authService';
 
 interface NavbarProps {
   onJoinClick: () => void;
+  onGalleryClick: () => void;
   user: UserProfile | null;
   onLogout: () => void;
   onDashboardClick: () => void;
   onHomeClick: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onJoinClick, user, onLogout, onDashboardClick, onHomeClick }) => {
+const Navbar: React.FC<NavbarProps> = ({ onJoinClick, onGalleryClick, user, onLogout, onDashboardClick, onHomeClick }) => {
   return (
     <nav className="bg-[#1e222d] border-b border-[#2a2e39] py-4 px-5 md:px-10 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-90">
       <div className="flex items-center gap-3 cursor-pointer" onClick={user ? onDashboardClick : onHomeClick}>
@@ -29,9 +30,9 @@ const Navbar: React.FC<NavbarProps> = ({ onJoinClick, user, onLogout, onDashboar
       
       <div className="hidden md:flex gap-8 text-[10px] font-black text-gray-500 uppercase tracking-widest">
         <button onClick={onHomeClick} className="hover:text-white transition-colors">Marketplace</button>
+        <button onClick={onGalleryClick} className="hover:text-pink-500 transition-colors">Success Hall</button>
         {user && <button onClick={onDashboardClick} className="text-[#f01a64] hover:text-white transition-colors">My Dashboard</button>}
         <a href="#" className="hover:text-white transition-colors">Markets</a>
-        <a href="#" className="hover:text-white transition-colors">Academy</a>
       </div>
 
       <div className="flex items-center gap-4">

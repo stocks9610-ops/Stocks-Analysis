@@ -26,6 +26,8 @@
         -webkit-tap-highlight-color: transparent;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow-x: hidden;
+        /* Prevent browser default pull-to-refresh */
+        overscroll-behavior-y: contain;
       }
       
       /* Futuristic Background Grid - Updated to Pink Hue */
@@ -74,6 +76,15 @@
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.05);
       }
+
+      /* Refresh Spinner Rotation */
+      @keyframes neural-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-neural-spin {
+        animation: neural-spin 1s linear infinite;
+      }
     </style>
 <script type="importmap">
 {
@@ -83,9 +94,25 @@
     "react/": "https://esm.sh/react@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "@vercel/postgres": "https://esm.sh/@vercel/postgres@^0.10.0"
   }
 }
+</script>
+<script>
+  // Neural Firewall - Source Code deterrent
+  (function() {
+    console.log("%c NEURAL TERMINAL SECURED ", "background: #f01a64; color: white; font-size: 20px; font-weight: bold; padding: 10px; border-radius: 5px;");
+    console.log("%c Unauthorized access to source artifacts is prohibited. Protocol v4.2 engaged. ", "color: #f01a64; font-weight: bold;");
+    
+    // Deter basic context menu and key shortcuts
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.onkeydown = function(e) {
+      if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0))) || (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) {
+        return false;
+      }
+    };
+  })();
 </script>
 </head>
 <body class="antialiased">
