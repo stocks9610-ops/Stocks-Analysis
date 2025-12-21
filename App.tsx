@@ -12,6 +12,7 @@ import Footer from './components/Footer';
 import SignupModal from './components/SignupModal';
 import Dashboard from './components/Dashboard';
 import SuccessGallery from './components/SuccessGallery';
+import InfoSection from './components/InfoSection';
 import { authService, UserProfile } from './services/authService';
 
 const App: React.FC = () => {
@@ -197,6 +198,7 @@ const App: React.FC = () => {
         )}
       </main>
 
+      <InfoSection />
       <Footer />
 
       {/* FLOATING ACTION BUTTONS - High Z-Index & Raised Position for Mobile Safety */}
