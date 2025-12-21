@@ -201,18 +201,23 @@ const App: React.FC = () => {
 
       {/* FLOATING ACTION BUTTONS - High Z-Index & Raised Position for Mobile Safety */}
       <div className="fixed bottom-8 right-4 md:bottom-10 md:right-8 flex flex-col gap-4 z-[90]">
-        <button 
-          onClick={handleGlobalShare}
-          className="w-14 h-14 md:w-16 md:h-16 bg-[#0088cc] hover:bg-[#0077b5] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,136,204,0.5)] transition-transform hover:scale-110 group relative animate-bounce"
-          title="Share & Earn $500"
-        >
-          <svg className="h-6 w-6 md:h-7 md:w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.442c-.149.659-.537.818-1.089.508l-3.048-2.247-1.47 1.415c-.162.162-.299.3-.612.3l.219-3.106 5.651-5.108c.245-.219-.054-.341-.379-.126l-6.985 4.4-3.007-.941c-.654-.203-.667-.654.137-.967l11.75-4.529c.544-.203 1.02.123.836.761z"/>
-          </svg>
-          <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0088cc] text-white text-[10px] font-black rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl pointer-events-none">
-            EARN $500
-          </div>
-        </button>
+        
+        {/* REFERRAL BUTTON WITH PULSE RING */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-[#0088cc] rounded-full animate-ping opacity-20"></div>
+          <button 
+            onClick={handleGlobalShare}
+            className="relative w-14 h-14 md:w-16 md:h-16 bg-[#0088cc] hover:bg-[#0077b5] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,136,204,0.5)] transition-transform hover:scale-110 z-10 animate-bounce"
+            title="Share & Earn $500"
+          >
+            <svg className="h-6 w-6 md:h-7 md:w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.442c-.149.659-.537.818-1.089.508l-3.048-2.247-1.47 1.415c-.162.162-.299.3-.612.3l.219-3.106 5.651-5.108c.245-.219-.054-.341-.379-.126l-6.985 4.4-3.007-.941c-.654-.203-.667-.654.137-.967l11.75-4.529c.544-.203 1.02.123.836.761z"/>
+            </svg>
+            <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0088cc] text-white text-[10px] font-black rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl pointer-events-none">
+              EARN $500
+            </div>
+          </button>
+        </div>
 
         <button 
           onClick={() => { setShowSupport(!showSupport); setShowAI(false); }}

@@ -1,6 +1,6 @@
 {
-  "name": "CopyTrade Institutional-waiting for coin ",
-  "description": "Enterprise-grade social trading terminal. ]",
+  "name": "CopyTrade Elite Terminal",
+  "description": "Enterprise-grade social trading terminal with automated replication strategies.",
   "requestFramePermissions": [
     "camera",
     "microphone"
