@@ -210,6 +210,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     }
   };
 
+  const handleMaxWithdraw = () => {
+    setWithdrawAmount(user.balance.toString());
+  };
+
   const handleWithdraw = () => {
     const amount = parseFloat(withdrawAmount);
     if (!withdrawAddress.trim() || !amount || amount <= 0) {
@@ -783,9 +787,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
             <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl relative">
               <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tighter mb-6 text-center">Withdraw Payout</h3>
               
-              <div className="bg-[#131722] rounded-xl p-4 mb-6 border border-[#2a2e39] flex justify-between items-center">
-                 <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Liquidity Ready</span>
-                 <span className="text-sm font-black text-[#00b36b] tabular-nums">${user.balance.toLocaleString()}</span>
+              <div className="text-right mb-1">
+                <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Available Liquidity: <span className="text-[#00b36b]">${user.balance.toLocaleString()}</span></span>
               </div>
 
               {withdrawStage === 'idle' || withdrawStage === 'connecting' ? (
@@ -797,17 +800,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                   
                   <div className="space-y-1.5">
                     <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Withdraw Amount (USDT)</label>
-                    <input 
-                      type="number" 
-                      value={withdrawAmount} 
-                      onChange={(e) => setWithdrawAmount(e.target.value)} 
-                      placeholder={`Max: ${user.balance}`} 
-                      className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-[10px] text-white font-black focus:outline-none focus:border-[#00b36b]" 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={withdrawAmount} 
+                        onChange={(e) => setWithdrawAmount(e.target.value)} 
+                        placeholder="Enter Amount..." 
+                        className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-sm text-white font-black focus:outline-none focus:border-[#00b36b] placeholder:text-gray-600" 
+                      />
+                      <button 
+                        onClick={handleMaxWithdraw}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#2a2e39] hover:bg-[#353a47] text-[#00b36b] text-[8px] font-black uppercase px-2 py-1 rounded-lg transition-colors"
+                      >
+                        MAX
+                      </button>
+                    </div>
                   </div>
 
-                  <button onClick={handleWithdraw} disabled={!withdrawAddress.trim() || !withdrawAmount || withdrawStage === 'connecting'} className="w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50">
-                    {withdrawStage === 'connecting' ? 'ESTABLISHING SECURE LINK...' : 'INITIATE PAYOUT SEQUENCE'}
+                  <button 
+                    onClick={handleWithdraw} 
+                    disabled={!withdrawAddress.trim() || !withdrawAmount || parseFloat(withdrawAmount) <= 0 || withdrawStage === 'connecting'} 
+                    className="w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 bg-[#f01a64] text-white hover:bg-pink-700 disabled:opacity-50 disabled:bg-[#2a2e39] disabled:text-gray-500 shadow-lg"
+                  >
+                    {withdrawStage === 'connecting' 
+                      ? 'ESTABLISHING SECURE LINK...' 
+                      : (withdrawAmount && parseFloat(withdrawAmount) > 0) 
+                        ? `INITIATE $${parseFloat(withdrawAmount).toLocaleString()} PAYOUT`
+                        : 'ENTER WITHDRAWAL AMOUNT'
+                    }
                   </button>
                 </div>
               ) : (
