@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Navbar from './components/Navbar';
 import TickerTape from './components/TickerTape';
 import Hero from './components/Hero';
@@ -138,6 +139,8 @@ const App: React.FC = () => {
           onSuccess={handleLoginSuccess}
         />
       )}
+
+      <SpeedInsights />
     </div>
   );
 };
