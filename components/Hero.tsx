@@ -1,15 +1,14 @@
 
 import React, { useState } from 'react';
-import InstallGuide from './InstallGuide';
 import FloatingFlags from './FloatingFlags';
 
 interface HeroProps {
   onJoinClick: () => void;
   onInstallRequest: () => Promise<boolean>;
+  onStartJourney?: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
-  const [showInstallGuide, setShowInstallGuide] = useState(false);
+const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest, onStartJourney }) => {
   const [shareText, setShareText] = useState('SHARE & EARN $200');
 
   const handleShare = async () => {
@@ -25,13 +24,6 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
     
     setShareText('OPENING TELEGRAM...');
     setTimeout(() => setShareText('SHARE & EARN $200'), 2000);
-  };
-
-  const handleInstallClick = async () => {
-    const shouldShowGuide = await onInstallRequest();
-    if (shouldShowGuide) {
-      setShowInstallGuide(true);
-    }
   };
 
   return (
@@ -84,26 +76,16 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-6 px-4">
           <button 
-            onClick={onJoinClick}
+            onClick={onStartJourney || onJoinClick}
             className="w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 bg-[#f01a64] hover:bg-pink-700 text-white font-black text-base md:text-lg rounded-xl shadow-lg transform transition active:scale-95 uppercase tracking-tighter"
           >
             START JOURNEY
           </button>
           
-          <div className="flex w-full sm:w-auto gap-2">
-            <button 
-              onClick={handleInstallClick}
-              className="flex-1 sm:flex-none px-6 md:px-10 py-4 md:py-5 bg-[#00b36b] hover:bg-green-600 text-white font-black text-base md:text-lg rounded-xl shadow-lg transform transition active:scale-95 uppercase tracking-tighter flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              INSTALL
-            </button>
-
+          <div className="flex w-full sm:w-auto gap-2 justify-center">
             <button 
               onClick={handleShare}
-              className="flex-1 sm:flex-none px-6 md:px-10 py-4 md:py-5 bg-[#0088cc] hover:bg-[#0077b5] text-white font-black text-base md:text-lg rounded-xl shadow-[0_0_20px_rgba(0,136,204,0.4)] transform transition active:scale-95 uppercase tracking-tighter flex items-center justify-center gap-2 group relative overflow-hidden"
+              className="w-full sm:w-auto px-6 md:px-10 py-4 md:py-5 bg-[#0088cc] hover:bg-[#0077b5] text-white font-black text-base md:text-lg rounded-xl shadow-[0_0_20px_rgba(0,136,204,0.4)] transform transition active:scale-95 uppercase tracking-tighter flex items-center justify-center gap-2 group relative overflow-hidden"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.442c-.149.659-.537.818-1.089.508l-3.048-2.247-1.47 1.415c-.162.162-.299.3-.612.3l.219-3.106 5.651-5.108c.245-.219-.054-.341-.379-.126l-6.985 4.4-3.007-.941c-.654-.203-.667-.654.137-.967l11.75-4.529c.544-.203 1.02.123.836.761z"/>
@@ -113,8 +95,6 @@ const Hero: React.FC<HeroProps> = ({ onJoinClick, onInstallRequest }) => {
           </div>
         </div>
       </div>
-
-      {showInstallGuide && <InstallGuide onClose={() => setShowInstallGuide(false)} />}
     </section>
   );
 };

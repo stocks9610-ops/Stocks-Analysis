@@ -4,7 +4,8 @@ import { UserProfile, authService } from '../services/authService';
 import { verifyPaymentProof, getInstantMarketPulse } from '../services/geminiService';
 
 interface DashboardProps {
-  user: UserProfile | null;
+  user: UserProfile;
+  onUserUpdate: (u: UserProfile) => void;
 }
 
 const INVESTMENT_PLANS = [
@@ -17,7 +18,7 @@ const INVESTMENT_PLANS = [
   { id: 7, name: 'Financial Freedom Plan', duration: '7 Days', minRet: 600, maxRet: 800, risk: 'Conservative' },
 ];
 
-const PLATFORMS = ['BINANCE', 'BYBIT', 'KRAKEN', 'OKX', 'COINBASE'];
+const SCAN_ASSETS = ['BTC/USDT', 'XAU/USD (GOLD)', 'EUR/USD', 'NASDAQ 100', 'ETH/USDT'];
 
 const NETWORKS = [
   { id: 'trc20', name: 'TRC-20 (Tron)', address: '0x7592766391918c7d3E7F8Ae72D97e98979F25302' },
@@ -25,8 +26,7 @@ const NETWORKS = [
   { id: 'bep20', name: 'BNB (BEP-20)', address: '0x2D97e98979F253020x7592766391918c7d3E7F8Ae7' }
 ];
 
-const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
-  const [user, setUser] = useState<UserProfile | null>(initialUser);
+const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [copied, setCopied] = useState(false);
   const [affiliateCopied, setAffiliateCopied] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'failed'>('idle');
@@ -45,42 +45,54 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [withdrawAddress, setWithdrawAddress] = useState('');
   const [showBonus, setShowBonus] = useState(false);
-  const [deploymentStep, setDeploymentStep] = useState<number>(-1);
+  
+  // Animation States for Signal Update
+  const [signalStage, setSignalStage] = useState<'idle' | 'scanning' | 'injecting' | 'locked'>('idle');
+  const [currentScanAsset, setCurrentScanAsset] = useState(SCAN_ASSETS[0]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
   const [withdrawNetworkId, setWithdrawNetworkId] = useState('trc20');
 
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      const u = authService.getUser();
-      if (u) {
-        setUser(u);
-      }
-    }, 5000);
-    return () => clearInterval(refreshInterval);
-  }, []);
-
-  useEffect(() => {
     if (isUnlocked && !aiPulse) {
-      fetchPulse();
-      if (!initialUser?.hasDeposited && user?.balance === 1000) {
+      handleSignalUpdate(); // Initial load
+      if (!user.hasDeposited && user.balance === 1000) {
         setShowBonus(true);
       }
     }
   }, [isUnlocked]);
 
-  const fetchPulse = async () => {
+  const handleSignalUpdate = async () => {
+    if (isAiLoading) return;
     setIsAiLoading(true);
-    setDeploymentStep(0);
-    for (let i = 0; i <= PLATFORMS.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setDeploymentStep(i + 1);
-    }
+    setSignalStage('scanning');
+
+    // Phase 1: Scan Assets Animation
+    let scans = 0;
+    const scanInterval = setInterval(() => {
+      setCurrentScanAsset(SCAN_ASSETS[scans % SCAN_ASSETS.length]);
+      scans++;
+    }, 200);
+
+    await new Promise(r => setTimeout(r, 2000));
+    clearInterval(scanInterval);
+
+    // Phase 2: Injecting Capital Simulation
+    setSignalStage('injecting');
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Phase 3: Locked
+    setSignalStage('locked');
+    await new Promise(r => setTimeout(r, 800));
+
+    // Phase 4: Fetch Real Data
     const pulse = await getInstantMarketPulse("Bitcoin/Ethereum Market");
     if (pulse) setAiPulse(pulse);
+    
+    setSignalStage('idle');
     setIsAiLoading(false);
-    setDeploymentStep(-1);
   };
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -102,7 +114,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   };
 
   const handleAffiliateCopy = () => {
-    const refLink = `${window.location.origin}/join?ref=${user?.email.split('@')[0]}`;
+    // UPDATED: Now copies the Telegram bot link as requested
+    const refLink = 'http://t.me/MentorwithZuluTrade_bot';
     navigator.clipboard.writeText(refLink);
     setAffiliateCopied(true);
     setTimeout(() => setAffiliateCopied(false), 2000);
@@ -136,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
             balance: (authService.getUser()?.balance || 0) + result.detected_amount 
           });
           if (updated) {
-            setUser(updated);
+            onUserUpdate(updated);
             setTimeout(() => setIsSyncing(false), 2000);
           }
         } else {
@@ -150,7 +163,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
   };
 
   const handleWithdraw = () => {
-    if (!user) return;
     if (!user.hasDeposited) {
       const selectedNet = NETWORKS.find(n => n.id === withdrawNetworkId)?.name || 'TRC-20';
       setWithdrawError(`Verification required ($1,000 ${selectedNet}).`);
@@ -179,11 +191,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
     if (!plan) return;
     setIsInvesting(true);
     setActiveTrade({ planName: plan.name, amount: investAmount, progress: 0 });
+    
+    // Deduct Balance Immediately
     const updatedUser = authService.updateUser({ 
       balance: currentU.balance - investAmount,
       totalInvested: currentU.totalInvested + investAmount
     });
-    if (updatedUser) setUser(updatedUser);
+    if (updatedUser) onUserUpdate(updatedUser);
     
     let progress = 0;
     const interval = setInterval(() => {
@@ -214,7 +228,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
     });
     
     if (updatedUser) {
-      setUser(updatedUser);
+      onUserUpdate(updatedUser);
       setTimeout(() => setIsSyncing(false), 2000);
     }
     
@@ -222,8 +236,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
     setActiveTrade(null);
     setSelectedPlanId(null);
   };
-
-  if (!user) return null;
 
   return (
     <div className="bg-[#131722] min-h-screen pt-4 pb-32 px-4 sm:px-6 lg:px-8 relative">
@@ -293,7 +305,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
             <span className="text-lg sm:text-2xl xl:text-3xl font-black text-white truncate block">${user.totalInvested.toLocaleString()}</span>
           </div>
           <div className="bg-[#1e222d] border border-[#2a2e39] p-4 md:p-5 rounded-[1.5rem] md:rounded-3xl shadow-xl overflow-hidden">
-            <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 truncate">Wins / Losses</span>
+            <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 truncate">Total Trades Win/Loss</span>
             <div className="flex items-baseline gap-1 overflow-hidden">
                 <span className="text-lg sm:text-2xl xl:text-3xl font-black text-[#00b36b]">{user.wins}</span>
                 <span className="text-gray-600 font-bold text-xs">/</span>
@@ -301,11 +313,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
             </div>
           </div>
           <div className="bg-[#1e222d] border border-[#2a2e39] p-4 md:p-5 rounded-[1.5rem] md:rounded-3xl shadow-xl flex flex-col justify-center text-center overflow-hidden relative">
-            <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-0.5 truncate">Cloud State</span>
+            <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-0.5 truncate">Account Status</span>
             <div className="flex items-center justify-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-[#00b36b]'}`}></div>
+              <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-[#00b36b] animate-ping'}`}></div>
               <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest truncate ${isSyncing ? 'text-amber-500' : 'text-[#00b36b]'}`}>
-                {isSyncing ? 'Syncing' : 'Archived'}
+                {isSyncing ? 'Syncing' : 'Active'}
               </span>
             </div>
           </div>
@@ -321,22 +333,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
                 </svg>
               </div>
               <div className="flex-1 text-center lg:text-left min-w-0">
-                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter mb-2">Global Affiliate Node</h3>
-                <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">
-                  Share your link & earn <span className="text-[#00b36b]">$500 Reward</span> for every verified first deposit from your network.
+                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter mb-2">Elite Partner Network</h3>
+                <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest mb-4 leading-relaxed max-w-2xl">
+                  Unlock high-velocity income. Invite others to the terminal and receive an instant <span className="text-[#00b36b]">$500 USDT bounty</span> for every verified active trader you onboard.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1 bg-black/40 border border-[#2a2e39] rounded-xl px-4 py-3 flex items-center justify-between min-w-0">
-                    <span className="text-[9px] md:text-xs text-gray-300 font-mono truncate mr-4">
-                      {window.location.origin}/join?ref={user?.email.split('@')[0]}
-                    </span>
-                    <button 
-                      onClick={handleAffiliateCopy}
-                      className="shrink-0 text-[#0088cc] hover:text-white transition-colors"
-                    >
-                      <span className="text-[9px] font-black uppercase tracking-widest">{affiliateCopied ? 'COPIED' : 'COPY'}</span>
-                    </button>
-                  </div>
+                  <button 
+                    onClick={handleAffiliateCopy}
+                    className="flex-1 bg-black/40 border border-[#2a2e39] rounded-xl px-4 py-3.5 flex items-center justify-center gap-2 hover:bg-black/60 transition-colors"
+                  >
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#0088cc]">{affiliateCopied ? 'REFERRAL LINK COPIED' : 'COPY REFERRAL LINK'}</span>
+                  </button>
                   <button 
                     onClick={handleTelegramShare}
                     className="bg-[#0088cc] hover:bg-[#0077b5] text-white px-6 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 flex items-center justify-center gap-2 animate-pulse"
@@ -347,9 +354,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
                 </div>
               </div>
               <div className="shrink-0 bg-white/5 p-6 rounded-3xl border border-white/10 text-center w-full lg:w-48">
-                <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest block mb-1">Affiliate Balance</span>
-                <span className="text-2xl font-black text-[#00b36b] block">$0.00</span>
-                <span className="text-[7px] text-gray-600 font-bold uppercase mt-2 block tracking-widest">Withdraw Anytime</span>
+                <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest block mb-1">USDT Wallet</span>
+                <span className="text-2xl font-black text-[#00b36b] block">${user.balance.toLocaleString()}</span>
+                <span className="text-[7px] text-gray-600 font-bold uppercase mt-2 block tracking-widest">Available Now</span>
               </div>
            </div>
         </div>
@@ -357,20 +364,37 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
         {/* AI INSIGHT SECTION */}
         <div className="bg-[#1e222d] border-2 border-dashed border-pink-500/30 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
-            <div className="shrink-0 w-16 h-16 bg-[#f01a64]/10 rounded-2xl flex items-center justify-center text-[#f01a64] shadow-inner">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+            <div className="shrink-0 w-16 h-16 bg-[#f01a64]/10 rounded-2xl flex items-center justify-center text-[#f01a64] shadow-inner relative">
+              {signalStage === 'scanning' && <div className="absolute inset-0 border-2 border-[#f01a64] rounded-2xl animate-ping opacity-50"></div>}
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-8 w-8 ${signalStage === 'scanning' ? 'animate-spin' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
               </svg>
             </div>
-            <div className="flex-1 text-center md:text-left min-w-0">
+            <div className="flex-1 text-center md:text-left min-w-0 w-full">
               <h3 className="text-sm md:text-base font-black text-white uppercase tracking-[0.1em] mb-1">Neural Insight</h3>
-              {isAiLoading ? (
-                <div className="space-y-3 animate-in fade-in">
-                  <div className="h-0.5 w-full bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#f01a64] transition-all duration-300" style={{ width: `${(deploymentStep / PLATFORMS.length) * 100}%` }}></div>
-                  </div>
-                  <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Scanning Markets...</span>
-                </div>
+              
+              {signalStage !== 'idle' ? (
+                 <div className="h-12 flex flex-col justify-center">
+                    {signalStage === 'scanning' && (
+                        <div className="text-center md:text-left">
+                           <span className="text-[#f01a64] text-xs font-black uppercase tracking-widest animate-pulse">Scanning Asset Protocol:</span>
+                           <div className="text-white text-lg font-black uppercase tracking-tighter mt-1">{currentScanAsset}</div>
+                        </div>
+                    )}
+                    {signalStage === 'injecting' && (
+                        <div className="text-center md:text-left">
+                           <span className="text-[#00b36b] text-xs font-black uppercase tracking-widest animate-pulse">Liquidity Injection:</span>
+                           <div className="text-white text-lg font-black uppercase tracking-tighter mt-1">Deploying $1,000.00...</div>
+                           <div className="w-full h-1 bg-gray-800 rounded-full mt-1 overflow-hidden"><div className="h-full bg-[#00b36b] w-2/3 animate-pulse"></div></div>
+                        </div>
+                    )}
+                    {signalStage === 'locked' && (
+                        <div className="text-center md:text-left">
+                           <span className="text-blue-500 text-xs font-black uppercase tracking-widest">Signal Acquired</span>
+                           <div className="text-white text-lg font-black uppercase tracking-tighter mt-1">Order Executed</div>
+                        </div>
+                    )}
+                 </div>
               ) : (
                 <div className="space-y-1.5 animate-in fade-in">
                    <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start">
@@ -383,11 +407,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user: initialUser }) => {
               )}
             </div>
             <button 
-              onClick={fetchPulse} 
-              disabled={isAiLoading}
-              className="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-[#f01a64] to-pink-600 rounded-xl text-[9px] md:text-[11px] font-black uppercase text-white shadow-lg active:scale-95 transition-all disabled:opacity-50"
+              onClick={handleSignalUpdate} 
+              disabled={signalStage !== 'idle'}
+              className="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-[#f01a64] to-pink-600 rounded-xl text-[9px] md:text-[11px] font-black uppercase text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Update Signals
+              {signalStage === 'idle' ? 'Update Signals' : 'Processing...'}
             </button>
           </div>
         </div>

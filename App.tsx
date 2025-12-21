@@ -30,6 +30,9 @@ const App: React.FC = () => {
   const startY = useRef(0);
   const threshold = 80;
 
+  // Navigation Refs
+  const traderSectionRef = useRef<HTMLDivElement>(null);
+
   // Transitions allow us to mark heavy renders (like switching views) as non-urgent
   const [isPending, startTransition] = useTransition();
 
@@ -119,6 +122,10 @@ const App: React.FC = () => {
     }
   };
 
+  const scrollToTraders = () => {
+    traderSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -184,17 +191,19 @@ const App: React.FC = () => {
       >
         {view === 'landing' ? (
           <>
-            <Hero onJoinClick={() => setShowSignup(true)} onInstallRequest={handleInstallClick} />
+            <Hero onJoinClick={() => setShowSignup(true)} onInstallRequest={handleInstallClick} onStartJourney={scrollToTraders} />
             <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 -mt-16 md:-mt-24 relative z-10 mb-8 md:mb-12">
               <div className="w-full bg-[#1e222d] border border-[#2a2e39] rounded-2xl shadow-2xl overflow-hidden h-[450px] md:h-[600px] border-t-[#00b36b] border-t-2">
                 <MarketChart />
               </div>
             </div>
-            <TraderList onCopyClick={navigateToDashboard} />
+            <div ref={traderSectionRef}>
+              <TraderList onCopyClick={navigateToDashboard} />
+            </div>
             <Features />
           </>
         ) : (
-          <Dashboard user={user} />
+          user && <Dashboard user={user} onUserUpdate={handleLoginSuccess} />
         )}
       </main>
 

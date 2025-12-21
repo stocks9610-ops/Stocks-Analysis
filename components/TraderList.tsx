@@ -99,6 +99,7 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
   const [traderProfits, setTraderProfits] = useState<Record<string, number>>({});
   const [animatingTraders, setAnimatingTraders] = useState<Record<string, boolean>>({});
   const [selectedTrader, setSelectedTrader] = useState<Trader | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initialProfits: Record<string, number> = {};
@@ -125,17 +126,43 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
     return () => clearInterval(profitInterval);
   }, [activeCategory]);
 
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
+
+  const getCategoryStyles = (cat: string) => {
+    const base = "px-8 py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all transform hover:-translate-y-1 active:scale-95 border-2";
+    if (activeCategory !== cat) {
+      return `${base} bg-[#1e222d] text-gray-400 border-[#2a2e39] hover:border-gray-500 hover:text-white`;
+    }
+    switch (cat) {
+      case 'crypto': return `${base} bg-[#f01a64] text-white border-[#f01a64] shadow-[0_10px_30px_rgba(240,26,100,0.3)]`;
+      case 'binary': return `${base} bg-blue-600 text-white border-blue-600 shadow-[0_10px_30px_rgba(37,99,235,0.3)]`;
+      case 'gold': return `${base} bg-yellow-500 text-black border-yellow-500 shadow-[0_10px_30px_rgba(234,179,8,0.3)]`;
+      case 'forex': return `${base} bg-emerald-600 text-white border-emerald-600 shadow-[0_10px_30px_rgba(5,150,105,0.3)]`;
+      default: return base;
+    }
+  };
+
   return (
-    <section className="py-12 md:py-24 bg-[#131722] border-t border-[#2a2e39]">
+    <section className="py-16 md:py-28 bg-[#131722] border-t border-[#2a2e39] relative">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-10 md:mb-14 space-y-6">
-          <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
-            Elite Marketplace:<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-gray-600">Crypto, Binary, Gold & Forex</span>
+        {/* NEW HEADER DESIGN */}
+        <div className="text-center mb-12 md:mb-16 space-y-6">
+          <h2 className="text-4xl md:text-7xl font-black tracking-tighter uppercase italic leading-none bg-gradient-to-b from-white to-gray-500 text-transparent bg-clip-text drop-shadow-2xl">
+            Top Traders From The World
           </h2>
           
           <p className="max-w-3xl mx-auto text-sm md:text-lg text-gray-400 font-medium leading-relaxed">
-            Copy trading lets you automatically follow experienced traders. Choose a trader based on verified performance and trade <span className="text-[#00b36b] font-bold">risk-free</span> with our C-Level expert strategies. When you copy, it becomes a <span className="text-white font-bold">sure profit</span> opportunity. Connect your account seamlessly, and their trades are copied in real-time. You stay in control and can stop or change traders at any time.
+            Copy trading lets you automatically follow experienced traders. Choose a trader based on verified performance and trade <span className="text-[#00b36b] font-bold">risk-free</span> with our C-Level expert strategies.
           </p>
 
           <div className="flex flex-wrap justify-center gap-3 mt-8">
@@ -143,11 +170,7 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-8 py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all transform hover:-translate-y-1 active:scale-95 border-2 ${
-                  activeCategory === cat 
-                  ? 'bg-[#f01a64] text-white border-[#f01a64] shadow-[0_10px_30px_rgba(240,26,100,0.3)]' 
-                  : 'bg-[#1e222d] text-gray-400 border-[#2a2e39] hover:border-gray-500 hover:text-white'
-                }`}
+                className={getCategoryStyles(cat)}
               >
                 {cat}
               </button>
@@ -155,58 +178,87 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
           </div>
         </div>
 
-        <div className="flex overflow-x-auto gap-3 md:gap-6 py-4 px-1 no-scrollbar snap-x snap-mandatory">
-          {MOCK_TRADERS.filter(t => t.category === activeCategory).map(trader => (
-            <div 
-              key={trader.id}
-              onClick={() => setSelectedTrader(trader)}
-              className={`min-w-[85vw] sm:min-w-[320px] md:min-w-[340px] bg-[#1e222d] border border-[#2a2e39] rounded-3xl p-6 cursor-pointer transition-all snap-center relative group hover:border-[#f01a64]/50 hover:shadow-2xl ${
-                animatingTraders[trader.id] ? 'border-[#f01a64] scale-[1.01]' : ''
-              }`}
-            >
-              <div className="flex items-center gap-4 mb-5">
-                <div className="relative">
-                  <img src={trader.avatar} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover ring-2 ring-white/5" />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#00b36b] border-2 border-[#1e222d] rounded-full"></div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-black text-sm md:text-base truncate mb-1 group-hover:text-[#f01a64] transition-colors">{trader.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[8px] bg-[#f01a64]/10 text-[#f01a64] px-2 py-0.5 rounded font-black uppercase tracking-widest">{trader.type}</span>
-                    <SocialIcons color="text-gray-500" />
+        {/* BROWSER CONTAINER */}
+        <div className="relative group/list">
+          {/* DESKTOP NAV ARROWS */}
+          <button 
+            onClick={scrollLeft}
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 w-12 h-12 bg-black/50 hover:bg-[#f01a64] rounded-full items-center justify-center text-white backdrop-blur-md border border-white/10 shadow-xl transition-all opacity-0 group-hover/list:opacity-100 hover:scale-110"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          
+          <button 
+            onClick={scrollRight}
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 w-12 h-12 bg-black/50 hover:bg-[#f01a64] rounded-full items-center justify-center text-white backdrop-blur-md border border-white/10 shadow-xl transition-all opacity-0 group-hover/list:opacity-100 hover:scale-110"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+          </button>
+
+          <div 
+            ref={scrollContainerRef}
+            className="flex overflow-x-auto gap-4 md:gap-6 py-4 px-1 no-scrollbar snap-x snap-mandatory scroll-smooth"
+          >
+            {MOCK_TRADERS.filter(t => t.category === activeCategory).map(trader => (
+              <div 
+                key={trader.id}
+                onClick={() => setSelectedTrader(trader)}
+                className={`min-w-[85vw] sm:min-w-[320px] md:min-w-[340px] bg-[#1e222d] border border-[#2a2e39] rounded-3xl p-6 cursor-pointer transition-all snap-center relative group hover:border-[#f01a64]/50 hover:shadow-2xl ${
+                  animatingTraders[trader.id] ? 'border-[#f01a64] scale-[1.01]' : ''
+                }`}
+              >
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="relative">
+                    <img src={trader.avatar} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover ring-2 ring-white/5" />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#00b36b] border-2 border-[#1e222d] rounded-full"></div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-white font-black text-sm md:text-base truncate mb-1 group-hover:text-[#f01a64] transition-colors">{trader.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[8px] bg-[#f01a64]/10 text-[#f01a64] px-2 py-0.5 rounded font-black uppercase tracking-widest">{trader.type}</span>
+                      <SocialIcons color="text-gray-500" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-[#131722] p-5 rounded-2xl mb-5 border border-[#2a2e39] group-hover:border-white/10 transition-colors">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total Profits</span>
-                  <span className="text-[8px] text-[#00b36b] font-black uppercase tracking-widest animate-pulse">Live</span>
+                <div className="bg-[#131722] p-5 rounded-2xl mb-5 border border-[#2a2e39] group-hover:border-white/10 transition-colors">
+                  <div className="flex justify-between items-end mb-1">
+                    <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total Profits</span>
+                    <span className="text-[8px] text-[#00b36b] font-black uppercase tracking-widest animate-pulse">Live</span>
+                  </div>
+                  <div className={`text-2xl md:text-3xl font-black tracking-tight ${animatingTraders[trader.id] ? 'text-[#00b36b]' : 'text-white'}`}>
+                    ${traderProfits[trader.id]?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
-                <div className={`text-2xl md:text-3xl font-black tracking-tight ${animatingTraders[trader.id] ? 'text-[#00b36b]' : 'text-white'}`}>
-                  ${traderProfits[trader.id]?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
-                  <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">ROI</span>
-                  <span className="text-[#00b36b] font-black text-sm">+{trader.roi}%</span>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
+                    <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">ROI</span>
+                    <span className="text-[#00b36b] font-black text-sm">+{trader.roi}%</span>
+                  </div>
+                  <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
+                    <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">Risk</span>
+                    <span className="text-[#f01a64] font-black text-sm">{trader.riskScore}/10</span>
+                  </div>
                 </div>
-                <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
-                  <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">Risk</span>
-                  <span className="text-[#f01a64] font-black text-sm">{trader.riskScore}/10</span>
-                </div>
-              </div>
 
-              <button 
-                className="w-full py-4 bg-[#00b36b] hover:bg-green-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg transform transition active:scale-95 group-hover:shadow-[#00b36b]/20"
-                onClick={(e) => { e.stopPropagation(); onCopyClick(); }}
-              >
-                Copy Strategy
-              </button>
-            </div>
-          ))}
+                <button 
+                  className="w-full py-4 bg-[#00b36b] hover:bg-green-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg transform transition active:scale-95 group-hover:shadow-[#00b36b]/20"
+                  onClick={(e) => { e.stopPropagation(); onCopyClick(); }}
+                >
+                  Copy Strategy
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          {/* MOBILE SWIPE HINT */}
+          <div className="flex md:hidden justify-center mt-4 gap-2 opacity-50">
+            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+            <span className="text-[8px] text-gray-400 uppercase font-black tracking-widest ml-2">Swipe to explore</span>
+          </div>
         </div>
       </div>
 

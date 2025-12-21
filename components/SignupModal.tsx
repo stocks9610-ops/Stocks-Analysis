@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { authService, UserProfile } from '../services/authService';
 
@@ -6,29 +7,12 @@ interface SignupModalProps {
   onSuccess: (user: UserProfile) => void;
 }
 
-const COUNTRY_CODES = [
-  { code: '+1', country: 'US' },
-  { code: '+44', country: 'UK' },
-  { code: '+27', country: 'ZA' },
-  { code: '+92', country: 'PK' },
-  { code: '+91', country: 'IN' }
-];
-
 const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [countryCode, setCountryCode] = useState('+92');
-  const [phone, setPhone] = useState('');
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'verified'>('idle');
   const [isLogin, setIsLogin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleVerify = () => {
-    if (!phone) return;
-    setVerificationStatus('verifying');
-    setTimeout(() => setVerificationStatus('verified'), 1500);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,20 +20,46 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
     setIsSubmitting(true);
     
     if (isLogin) {
+      if (!email || !password) {
+        alert("Please enter email and password to login.");
+        setIsSubmitting(false);
+        return;
+      }
       const user = await authService.login(email, password);
-      if (user) onSuccess(user);
-      else { alert("Invalid login."); setIsSubmitting(false); }
+      if (user) {
+        onSuccess(user);
+      } else { 
+        alert("Invalid login credentials."); 
+        setIsSubmitting(false); 
+      }
     } else {
-      if (verificationStatus !== 'verified') { alert("Verify first."); setIsSubmitting(false); return; }
+      // ACCOUNT CREATION LOGIC
+      // If fields are empty, generate guest credentials
+      const timestamp = Date.now().toString().slice(-6);
+      const finalEmail = email.trim() || `guest_${timestamp}@copytrade.com`;
+      const finalPassword = password.trim() || 'demo_access';
+      const finalName = username.trim() || `Trader ${timestamp}`;
+
       const newUser: UserProfile = {
-        username: username || 'User',
-        email, password, phone: `${countryCode}${phone}`,
+        username: finalName,
+        email: finalEmail,
+        password: finalPassword,
+        phone: 'N/A',
         joinDate: new Date().toISOString(),
-        balance: 1000, hasDeposited: false, wins: 0, losses: 0, totalInvested: 0
+        balance: 1000, 
+        hasDeposited: false, 
+        wins: 0, 
+        losses: 0, 
+        totalInvested: 0
       };
+
       const success = await authService.register(newUser);
-      if (success) onSuccess(newUser);
-      else { alert("Registration failed."); setIsSubmitting(false); }
+      if (success) {
+        onSuccess(newUser);
+      } else { 
+        alert("Account creation failed. Please try again."); 
+        setIsSubmitting(false); 
+      }
     }
   };
 
@@ -59,7 +69,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
         <div className="p-6 md:p-10 overflow-y-auto no-scrollbar flex-1 pb-24">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">
-              {isLogin ? 'Welcome Back' : 'Create Identity'}
+              {isLogin ? 'Member Access' : 'Create Account'}
             </h2>
             <button onClick={onClose} className="p-2 text-gray-500 active:text-white">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,51 +80,63 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <input 
-                type="text" required placeholder="Full Name" value={username} onChange={e => setUsername(e.target.value)}
-                className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-3.5 text-white focus:border-[#f01a64] font-bold text-sm outline-none"
-              />
-            )}
-            <input 
-              type="email" required placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-3.5 text-white focus:border-[#f01a64] font-bold text-sm outline-none"
-            />
-            {!isLogin && (
-              <div className="flex gap-2">
-                <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="bg-[#131722] border border-[#2a2e39] rounded-xl px-3 py-3 text-white text-xs font-bold outline-none">
-                  {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
-                </select>
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest ml-1">Username</label>
                 <input 
-                  type="tel" required placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                  className="flex-1 bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-3.5 text-white focus:border-[#f01a64] font-bold text-sm outline-none"
+                  type="text" 
+                  placeholder="e.g. CryptoKing" 
+                  value={username} 
+                  onChange={e => setUsername(e.target.value)}
+                  className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-4 text-white focus:border-[#f01a64] font-bold text-sm outline-none placeholder:text-gray-600 transition-colors"
                 />
               </div>
             )}
-            <input 
-              type="password" required placeholder="Secure Password" value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-3.5 text-white focus:border-[#f01a64] font-bold text-sm outline-none"
-            />
+            
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest ml-1">
+                Email {isLogin ? '' : '(Optional)'}
+              </label>
+              <input 
+                type="email" 
+                placeholder={isLogin ? "Enter registered email" : "Auto-generated if empty"} 
+                value={email} 
+                onChange={e => setEmail(e.target.value)}
+                className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-4 text-white focus:border-[#f01a64] font-bold text-sm outline-none placeholder:text-gray-600 transition-colors"
+              />
+            </div>
 
-            {!isLogin && (
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest ml-1">
+                Password {isLogin ? '' : '(Optional)'}
+              </label>
+              <input 
+                type="password" 
+                placeholder={isLogin ? "Enter password" : "Auto-generated if empty"} 
+                value={password} 
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-5 py-4 text-white focus:border-[#f01a64] font-bold text-sm outline-none placeholder:text-gray-600 transition-colors"
+              />
+            </div>
+
+            <div className="pt-4">
               <button 
-                type="button" onClick={handleVerify}
-                className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${verificationStatus === 'verified' ? 'bg-[#00b36b]/10 border-[#00b36b] text-[#00b36b]' : 'border-[#f01a64]/30 text-[#f01a64]'}`}
+                type="submit" disabled={isSubmitting}
+                className="w-full bg-[#f01a64] py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-50 hover:bg-pink-600 transition-all"
               >
-                {verificationStatus === 'idle' ? 'Run Human Verification' : verificationStatus === 'verifying' ? 'Processing...' : 'Identity Verified'}
+                {isSubmitting ? 'Processing...' : isLogin ? 'Secure Login' : 'Create Account'}
               </button>
-            )}
+            </div>
 
-            <button 
-              type="submit" disabled={isSubmitting}
-              className="w-full bg-[#f01a64] py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-50"
-            >
-              {isLogin ? 'Member Login' : 'Join Network'}
-            </button>
-
-            <button type="button" onClick={() => setIsLogin(!isLogin)} className="w-full text-[10px] text-gray-500 font-black uppercase tracking-widest text-center py-2">
-              {isLogin ? "No account? Join" : "Have an account? Login"}
+            <button type="button" onClick={() => setIsLogin(!isLogin)} className="w-full text-[10px] text-gray-500 font-black uppercase tracking-widest text-center py-4 hover:text-white transition-colors">
+              {isLogin ? "New here? Create Instant Account" : "Already have a profile? Login"}
             </button>
           </form>
+          
+          {!isLogin && (
+            <p className="text-[9px] text-gray-600 text-center mt-4 leading-relaxed px-2">
+              A secure local session is created on this device. Your data persists locally. <span className="text-gray-500 font-bold">Please do not clear your cache or switch browsers until you withdraw.</span> Recommended: Google Chrome.
+            </p>
+          )}
         </div>
       </div>
     </div>
