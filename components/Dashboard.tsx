@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, authService } from '../services/authService';
 import { verifyPaymentProof, getInstantMarketPulse } from '../services/geminiService';
 import { Trader } from '../types';
+import HolographicGuide from './HolographicGuide';
 
 interface DashboardProps {
   user: UserProfile;
@@ -100,6 +101,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
   const depositSectionRef = useRef<HTMLDivElement>(null);
 
   const [depositNetwork, setDepositNetwork] = useState(NETWORKS[0]);
+
+  // Determine HUD State
+  const getHudStep = () => {
+    if (tradeStatus === 'completed') return 'profit';
+    if (isInvesting) return 'investing';
+    if (selectedPlanId && !isInvesting) return 'ready';
+    if (!user.hasDeposited && activeTraders.length > 0) return 'deposit_needed';
+    if (activeTraders.length === 0) return 'init';
+    return 'ready';
+  };
 
   // Timer Countdown Effect
   useEffect(() => {
@@ -474,6 +485,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
 
   return (
     <div className="bg-[#131722] min-h-screen pt-4 pb-32 px-4 sm:px-6 lg:px-8 relative">
+      {/* --- HOLOGRAPHIC GUIDE IMPLEMENTATION --- */}
+      <HolographicGuide step={getHudStep()} />
+
       {/* ... (Existing Modals: showBonus, !isUnlocked) ... */}
       {showBonus && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/95 backdrop-blur-3xl animate-in fade-in duration-500">
