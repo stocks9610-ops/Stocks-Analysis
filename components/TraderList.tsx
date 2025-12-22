@@ -140,7 +140,7 @@ const ALL_TRADERS = [...INITIAL_TRADERS, ...generateTraders()];
 
 const SocialIcons: React.FC<{ color: string }> = ({ color }) => (
   <div className="flex gap-1.5 mt-1.5 opacity-60">
-    <svg className={`w-2.5 h-2.5 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.054-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    <svg className={`w-2.5 h-2.5 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.054-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759 6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
     <svg className={`w-2.5 h-2.5 ${color}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.462 8.27l-1.56 7.42c-.116.545-.44.68-.895.425l-2.37-1.75-1.145 1.1c-.125.127-.23.234-.473.234l.17-2.42 4.41-3.98c.19-.17-.04-.26-.297-.09l-5.45 3.43-2.34-.73c-.51-.16-.52-.51.107-.756l9.15-3.53c.42-.15.79.1.663.667z"/></svg>
   </div>
 );
@@ -152,33 +152,49 @@ interface TraderListProps {
 const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
   const [activeCategory, setActiveCategory] = useState<'crypto' | 'binary' | 'gold' | 'forex'>('crypto');
   const [traderProfits, setTraderProfits] = useState<Record<string, number>>({});
+  const [liveWinRates, setLiveWinRates] = useState<Record<string, number>>({});
   const [animatingTraders, setAnimatingTraders] = useState<Record<string, boolean>>({});
   const [selectedTrader, setSelectedTrader] = useState<Trader | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initialProfits: Record<string, number> = {};
+    const initialWinRates: Record<string, number> = {};
+    
     ALL_TRADERS.forEach(t => {
       const baseProfit = t.id === '0' ? 245000.00 : 5000.00;
       initialProfits[t.id] = baseProfit + Math.random() * 45000;
+      initialWinRates[t.id] = t.winRate; // Start with base win rate
     });
+    
     setTraderProfits(initialProfits);
+    setLiveWinRates(initialWinRates);
 
-    const profitInterval = setInterval(() => {
+    const updateInterval = setInterval(() => {
       const filtered = ALL_TRADERS.filter(t => t.category === activeCategory);
       if (filtered.length === 0) return;
       const randomIdx = Math.floor(Math.random() * filtered.length);
       const trader = filtered[randomIdx];
+      
+      // Update Profit
       const baseIncrement = trader.id === '0' ? 850 : 250;
       const increment = baseIncrement + Math.random() * 1250;
       
+      // Update Win Rate (Fluctuate slightly)
+      const winRateFluctuation = (Math.random() - 0.5) * 0.4; // +/- 0.2%
+      
       setTraderProfits(prev => ({ ...prev, [trader.id]: prev[trader.id] + increment }));
+      setLiveWinRates(prev => ({ 
+        ...prev, 
+        [trader.id]: Math.min(100, Math.max(50, prev[trader.id] + winRateFluctuation)) 
+      }));
+      
       setAnimatingTraders(prev => ({ ...prev, [trader.id]: true }));
       playProfitSound();
       setTimeout(() => setAnimatingTraders(prev => ({ ...prev, [trader.id]: false })), 400);
     }, 1200);
 
-    return () => clearInterval(profitInterval);
+    return () => clearInterval(updateInterval);
   }, [activeCategory]);
 
   const scrollLeft = () => {
@@ -291,9 +307,12 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
                     <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">ROI</span>
                     <span className="text-[#00b36b] font-black text-sm">+{trader.roi}%</span>
                   </div>
-                  <div className="bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center">
-                    <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">Risk</span>
-                    <span className="text-[#f01a64] font-black text-sm">{trader.riskScore}/10</span>
+                  {/* REPLACED RISK WITH WIN RATE */}
+                  <div className={`bg-[#131722] p-3 rounded-xl border border-[#2a2e39] text-center ${animatingTraders[trader.id] ? 'bg-[#00b36b]/5' : ''} transition-colors`}>
+                    <span className="text-[7px] text-gray-500 uppercase font-black block mb-1">Accuracy</span>
+                    <span className="text-[#00b36b] font-black text-sm">
+                      {(liveWinRates[trader.id] || trader.winRate).toFixed(1)}%
+                    </span>
                   </div>
                 </div>
 
@@ -318,7 +337,13 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
       </div>
 
       {selectedTrader && (
-        <TraderProfileModal trader={selectedTrader} onClose={() => setSelectedTrader(null)} onCopyClick={() => onCopyClick(selectedTrader)} />
+        <TraderProfileModal 
+          trader={selectedTrader} 
+          currentProfit={traderProfits[selectedTrader.id]}
+          currentWinRate={liveWinRates[selectedTrader.id]}
+          onClose={() => setSelectedTrader(null)} 
+          onCopyClick={() => onCopyClick(selectedTrader)} 
+        />
       )}
     </section>
   );

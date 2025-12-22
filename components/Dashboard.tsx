@@ -19,8 +19,6 @@ const INVESTMENT_PLANS = [
   { id: 5, name: 'Whale Cycle (Pro)', duration: '4 Hours', durationMs: 14400000, minRet: 300, maxRet: 400, risk: 'High', minInvest: 10000, vip: true },
 ];
 
-const SCAN_ASSETS = ['BTC/USDT', 'XAU/USD (GOLD)', 'EUR/USD', 'NASDAQ 100', 'ETH/USDT'];
-
 // UPDATED NETWORKS - BEP20 Address Changed
 const NETWORKS = [
   { id: 'trc20', name: 'USDT (TRC-20)', address: '0x7592766391918c7d3E7F8Ae72D97e98979F25302' },
@@ -31,29 +29,23 @@ const NETWORKS = [
 type TradeStatus = 'idle' | 'bridging' | 'filling' | 'live' | 'completed';
 type WithdrawStage = 'idle' | 'connecting' | 'verifying' | 'retrying' | 'error' | 'success';
 
-// --- NEW COMPONENT: TYPEWRITER EFFECT ---
-const TerminalText: React.FC<{ text: string; speed?: number }> = ({ text, speed = 15 }) => {
-  const [displayed, setDisplayed] = useState('');
-  
+// --- NEW COMPONENT: STRATEGY LOG TYPEWRITER ---
+const TerminalLog: React.FC<{ logs: string[] }> = ({ logs }) => {
+  const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    setDisplayed('');
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < text.length) {
-        setDisplayed(prev => prev + text.charAt(i));
-        i++;
-      } else {
-        clearInterval(timer);
-      }
-    }, speed);
-    return () => clearInterval(timer);
-  }, [text, speed]);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
 
   return (
-    <span className="font-mono text-[10px] md:text-xs leading-relaxed text-[#00b36b]">
-      {displayed}
-      <span className="animate-pulse ml-0.5 inline-block w-1.5 h-3 bg-[#00b36b] align-middle"></span>
-    </span>
+    <div className="font-mono text-[10px] md:text-xs leading-relaxed text-[#00b36b] h-full overflow-hidden flex flex-col justify-end">
+      {logs.map((log, i) => (
+        <div key={i} className="animate-in slide-in-from-left duration-75 truncate">
+          <span className="text-gray-500 mr-2">[{new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit'})}]</span>
+          {log}
+        </div>
+      ))}
+      <div ref={bottomRef} />
+    </div>
   );
 };
 
@@ -69,7 +61,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'failed'>('idle');
   const [auditMessage, setAuditMessage] = useState<string>('');
   const [txId, setTxId] = useState('');
-  const [timeLeft, setTimeLeft] = useState(1799); // 29:59 timer
+  const [timeLeft, setTimeLeft] = useState(1799); 
 
   // WITHDRAW STATES
   const [withdrawStage, setWithdrawStage] = useState<WithdrawStage>('idle');
@@ -80,8 +72,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
+  
+  // ORACLE STATES
   const [aiPulse, setAiPulse] = useState<{sentiment: string, score: number, brief: string} | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [executionLogs, setExecutionLogs] = useState<string[]>([]); // New Log State
+  
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [investAmount, setInvestAmount] = useState<number>(500);
   const [isInvesting, setIsInvesting] = useState(false);
@@ -97,8 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
   const [showBonus, setShowBonus] = useState(false);
   
   // Animation States
-  const [signalStage, setSignalStage] = useState<'idle' | 'scanning' | 'injecting' | 'locked'>('idle');
-  const [scrambleText, setScrambleText] = useState('');
+  const [signalStage, setSignalStage] = useState<'idle' | 'running' | 'locked'>('idle');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -128,7 +123,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
 
   useEffect(() => {
     if (isUnlocked && !aiPulse) {
-      handleSignalUpdate(); // Initial load
+      // Don't auto scan immediately, let user click.
       if (!user.hasDeposited && user.balance === 1000) {
         setShowBonus(true);
       }
@@ -149,19 +144,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
       }
     }
   }, [selectedPlanId]);
-
-  // Binary Scramble Effect Logic
-  useEffect(() => {
-    if (signalStage === 'scanning' || signalStage === 'injecting') {
-      const chars = '01010101XYZ_Ω∆π#';
-      const interval = setInterval(() => {
-        let str = '';
-        for (let i = 0; i < 40; i++) str += chars.charAt(Math.floor(Math.random() * chars.length));
-        setScrambleText(str);
-      }, 50);
-      return () => clearInterval(interval);
-    }
-  }, [signalStage]);
 
   const handleDisconnect = (e: React.MouseEvent, traderId: string) => {
     e.stopPropagation();
@@ -186,21 +168,46 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
     onSwitchTrader();
   };
 
+  // --- THE MONEY RUNNING SIMULATION ---
   const handleSignalUpdate = async () => {
     if (isAiLoading) return;
     setIsAiLoading(true);
-    setSignalStage('scanning');
-    setAiPulse(null); // Clear previous result to show scramble
+    setSignalStage('running');
+    setAiPulse(null);
+    setExecutionLogs([]); // Clear logs
 
-    // Phase 1 & 2 & 3 (Animation Sequence)
-    await new Promise(r => setTimeout(r, 2500)); // Wait for scramble effect
+    const moneyActions = [
+      "CONNECTING: Global Crypto Liquidity Pool...",
+      "SCANNING: Forex EUR/USD Order Flow...",
+      "DETECTED: Gold XAU/USD Institutional Buy...",
+      "SYNCING: Binary Options Strategy #882...",
+      "ALLOCATING: $2,500 USDT to Grid Bot...",
+      "COPYING: Elite Trader 'MacroKing'...",
+      "VERIFYING: Binance API Latency (12ms)...",
+      "EXECUTING: High-Frequency Long BTC...",
+      "DETECTED: 98% Win Rate Signal...",
+      "DEPLOYING: Smart Contract Arb Logic...",
+      "SIGNAL LOCKED: Ready for Entry."
+    ];
 
-    // Phase 4: Fetch Real Data
-    const pulse = await getInstantMarketPulse("Bitcoin/Ethereum Market");
-    
-    setSignalStage('idle');
-    if (pulse) setAiPulse(pulse);
-    setIsAiLoading(false);
+    let step = 0;
+    const interval = setInterval(() => {
+      if (step < moneyActions.length) {
+        setExecutionLogs(prev => [...prev, moneyActions[step]]);
+        step++;
+      } else {
+        clearInterval(interval);
+        // FINAL RESULT
+        const finalPulse = {
+          sentiment: "STRONG BUY",
+          score: 96.4,
+          brief: "• **ASSET**: Gold / BTC Correlation\n• **ACTION**: Aggressive Accumulation\n• **TARGET**: Institutional Zone\n• **STRATEGY**: Copy Active"
+        };
+        setAiPulse(finalPulse);
+        setSignalStage('idle');
+        setIsAiLoading(false);
+      }
+    }, 400); // Speed of logs
   };
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -687,7 +694,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
             <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-[#2a2e39] flex flex-col justify-between items-center md:items-start min-w-[200px] bg-[#131722]/50">
                <div className="flex items-center gap-2 mb-6">
                   <div className="w-2 h-2 bg-[#f01a64] rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Live Feed</span>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Strategy Scanner</span>
                </div>
 
                {/* CIRCULAR GAUGE */}
@@ -707,7 +714,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
                   disabled={signalStage !== 'idle'}
                   className="w-full py-3 bg-[#f01a64] hover:bg-pink-700 text-white rounded-xl font-black text-[9px] uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
                >
-                  {signalStage === 'idle' ? 'Scan Market' : 'Decrypting...'}
+                  {signalStage === 'idle' ? 'Scan Market' : 'Executing...'}
                   <svg className={`w-3 h-3 ${signalStage !== 'idle' ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                </button>
             </div>
@@ -715,7 +722,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
             {/* RIGHT: TERMINAL OUTPUT */}
             <div className="flex-1 p-6 md:p-8 flex flex-col">
                <div className="flex justify-between items-center mb-4 pb-2 border-b border-[#2a2e39] border-dashed">
-                  <span className="text-[10px] font-mono text-[#00b36b]">root@neural-core:~# display_sentiment</span>
+                  <span className="text-[10px] font-mono text-[#00b36b]">root@neural-core:~# execute_strategy</span>
                   {aiPulse && (
                      <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${aiPulse.score > 50 ? 'bg-[#00b36b]/10 text-[#00b36b]' : 'bg-red-500/10 text-red-500'}`}>
                         {aiPulse.sentiment}
@@ -723,19 +730,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrade
                   )}
                </div>
 
-               <div className="flex-1 font-mono min-h-[80px] flex items-center">
+               <div className="flex-1 font-mono min-h-[120px] flex flex-col">
+                  {/* CASE 1: IDLE */}
                   {signalStage === 'idle' && !aiPulse && (
-                     <span className="text-gray-600 text-[10px] uppercase tracking-widest animate-pulse">> Awaiting Operator Command...</span>
+                     <div className="flex items-center justify-center h-full text-gray-600 text-[10px] uppercase tracking-widest animate-pulse">
+                        > Awaiting Command to Deploy Capital...
+                     </div>
                   )}
                   
-                  {(signalStage === 'scanning' || signalStage === 'injecting') && (
-                     <p className="text-[#00b36b] text-xs break-all leading-relaxed blur-[0.5px] opacity-80">
-                        {scrambleText}
-                     </p>
+                  {/* CASE 2: RUNNING (MONEY STREAM) */}
+                  {signalStage === 'running' && (
+                     <TerminalLog logs={executionLogs} />
                   )}
 
+                  {/* CASE 3: RESULT (MOCK OR REAL) */}
                   {aiPulse && signalStage === 'idle' && (
-                     <TerminalText text={aiPulse.brief} />
+                     <div className="text-white text-xs leading-relaxed animate-in fade-in">
+                        <div className="whitespace-pre-wrap">{aiPulse.brief}</div>
+                     </div>
                   )}
                </div>
 

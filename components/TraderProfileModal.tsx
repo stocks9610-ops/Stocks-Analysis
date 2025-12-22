@@ -5,6 +5,8 @@ import { getTraderEdgeFast } from '../services/geminiService';
 
 interface TraderProfileModalProps {
   trader: Trader;
+  currentProfit?: number; // New Prop
+  currentWinRate?: number; // New Prop
   onClose: () => void;
   onCopyClick: () => void;
 }
@@ -28,7 +30,7 @@ const useCountUp = (endValue: number, duration: number = 1000) => {
   return count;
 };
 
-const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, onClose, onCopyClick }) => {
+const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, currentProfit, currentWinRate, onClose, onCopyClick }) => {
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(true);
   const [scanStep, setScanStep] = useState(0);
@@ -95,6 +97,10 @@ const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, onClose
     );
   }
 
+  // Use passed props or default values
+  const displayWinRate = currentWinRate ? currentWinRate.toFixed(1) : trader.winRate;
+  // Note: Profit isn't explicitly shown in the main view body, but we can use it if we add a field for it.
+  
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-0 sm:p-4">
       <div className="bg-[#131722] w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-[2.5rem] flex flex-col overflow-hidden animate-in zoom-in-95 shadow-2xl border border-white/5">
@@ -118,7 +124,8 @@ const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, onClose
               <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter truncate">{trader.name}</h2>
               <div className="flex flex-wrap gap-2 mt-1">
                 <span className="text-[9px] font-black bg-white/10 text-white px-2 py-0.5 rounded uppercase tracking-widest">{trader.type}</span>
-                <span className="text-[9px] font-black bg-[#f01a64]/10 text-[#f01a64] px-2 py-0.5 rounded uppercase tracking-widest">Risk: {trader.riskScore}/10</span>
+                {/* RENAMED RISK TO SAFETY SCORE */}
+                <span className="text-[9px] font-black bg-[#f01a64]/10 text-[#f01a64] px-2 py-0.5 rounded uppercase tracking-widest">Safety Score: {trader.riskScore}/10</span>
               </div>
             </div>
           </div>
@@ -135,8 +142,8 @@ const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, onClose
                 <span className="text-lg md:text-2xl font-black text-[#00b36b]">+{animatedRoi.toFixed(0)}%</span>
               </div>
               <div className="bg-[#1e222d] p-4 rounded-2xl border border-[#2a2e39] text-center">
-                <span className="text-[8px] text-gray-500 uppercase font-black block mb-1">Win Rate</span>
-                <span className="text-lg md:text-2xl font-black text-white">{trader.winRate}%</span>
+                <span className="text-[8px] text-gray-500 uppercase font-black block mb-1">Accuracy</span>
+                <span className="text-lg md:text-2xl font-black text-white">{displayWinRate}%</span>
               </div>
               <div className="bg-[#1e222d] p-4 rounded-2xl border border-[#2a2e39] text-center">
                 <span className="text-[8px] text-gray-500 uppercase font-black block mb-1">Followers</span>
