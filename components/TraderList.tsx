@@ -146,7 +146,7 @@ const SocialIcons: React.FC<{ color: string }> = ({ color }) => (
 );
 
 interface TraderListProps {
-  onCopyClick: () => void;
+  onCopyClick: (trader: Trader) => void;
 }
 
 const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
@@ -299,7 +299,7 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
 
                 <button 
                   className="w-full py-4 bg-[#00b36b] hover:bg-green-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg transform transition active:scale-95 group-hover:shadow-[#00b36b]/20"
-                  onClick={(e) => { e.stopPropagation(); onCopyClick(); }}
+                  onClick={(e) => { e.stopPropagation(); onCopyClick(trader); }}
                 >
                   Copy Strategy
                 </button>
@@ -318,7 +318,7 @@ const TraderList: React.FC<TraderListProps> = ({ onCopyClick }) => {
       </div>
 
       {selectedTrader && (
-        <TraderProfileModal trader={selectedTrader} onClose={() => setSelectedTrader(null)} onCopyClick={onCopyClick} />
+        <TraderProfileModal trader={selectedTrader} onClose={() => setSelectedTrader(null)} onCopyClick={() => onCopyClick(selectedTrader)} />
       )}
     </section>
   );

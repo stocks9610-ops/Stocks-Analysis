@@ -2,10 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, authService } from '../services/authService';
 import { verifyPaymentProof, getInstantMarketPulse } from '../services/geminiService';
+import { Trader } from '../types';
 
 interface DashboardProps {
   user: UserProfile;
   onUserUpdate: (u: UserProfile) => void;
+  onSwitchTrader: () => void;
 }
 
 // STRATEGY UPDATE: High-Octane "Hook" Plans
@@ -29,10 +31,40 @@ const NETWORKS = [
 type TradeStatus = 'idle' | 'bridging' | 'filling' | 'live' | 'completed';
 type WithdrawStage = 'idle' | 'connecting' | 'verifying' | 'retrying' | 'error' | 'success';
 
-const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
+// --- NEW COMPONENT: TYPEWRITER EFFECT ---
+const TerminalText: React.FC<{ text: string; speed?: number }> = ({ text, speed = 15 }) => {
+  const [displayed, setDisplayed] = useState('');
+  
+  useEffect(() => {
+    setDisplayed('');
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(prev => prev + text.charAt(i));
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, speed);
+    return () => clearInterval(timer);
+  }, [text, speed]);
+
+  return (
+    <span className="font-mono text-[10px] md:text-xs leading-relaxed text-[#00b36b]">
+      {displayed}
+      <span className="animate-pulse ml-0.5 inline-block w-1.5 h-3 bg-[#00b36b] align-middle"></span>
+    </span>
+  );
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate, onSwitchTrader }) => {
   const [copied, setCopied] = useState(false);
   const [affiliateCopied, setAffiliateCopied] = useState(false);
   
+  // NODE MANAGEMENT
+  const activeTraders = user.activeTraders || [];
+  const [focusedTraderId, setFocusedTraderId] = useState<string | null>(activeTraders.length > 0 ? activeTraders[0].id : null);
+
   // DEPOSIT STATES
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'failed'>('idle');
   const [auditMessage, setAuditMessage] = useState<string>('');
@@ -43,7 +75,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   const [withdrawStage, setWithdrawStage] = useState<WithdrawStage>('idle');
   const [withdrawLogs, setWithdrawLogs] = useState<string[]>([]);
   const [withdrawAddress, setWithdrawAddress] = useState('');
-  const [withdrawAmount, setWithdrawAmount] = useState<string>(''); // NEW: Amount State
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('');
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState('');
@@ -66,7 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
   
   // Animation States
   const [signalStage, setSignalStage] = useState<'idle' | 'scanning' | 'injecting' | 'locked'>('idle');
-  const [currentScanAsset, setCurrentScanAsset] = useState(SCAN_ASSETS[0]);
+  const [scrambleText, setScrambleText] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -81,6 +113,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       return () => clearInterval(timer);
     }
   }, [timeLeft]);
+
+  useEffect(() => {
+    if (activeTraders.length > 0 && !focusedTraderId) {
+        setFocusedTraderId(activeTraders[0].id);
+    }
+  }, [activeTraders]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -103,7 +141,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     }
   }, [terminalLogs]);
 
-  // Update invest amount when plan changes to match minInvest
   useEffect(() => {
     if (selectedPlanId) {
       const plan = INVESTMENT_PLANS.find(p => p.id === selectedPlanId);
@@ -113,34 +150,56 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     }
   }, [selectedPlanId]);
 
+  // Binary Scramble Effect Logic
+  useEffect(() => {
+    if (signalStage === 'scanning' || signalStage === 'injecting') {
+      const chars = '01010101XYZ_Ω∆π#';
+      const interval = setInterval(() => {
+        let str = '';
+        for (let i = 0; i < 40; i++) str += chars.charAt(Math.floor(Math.random() * chars.length));
+        setScrambleText(str);
+      }, 50);
+      return () => clearInterval(interval);
+    }
+  }, [signalStage]);
+
+  const handleDisconnect = (e: React.MouseEvent, traderId: string) => {
+    e.stopPropagation();
+    const confirm = window.confirm("Are you sure you want to stop following this Strategy?");
+    if (confirm) {
+        const updatedTraders = activeTraders.filter(t => t.id !== traderId);
+        const updatedUser = authService.updateUser({ activeTraders: updatedTraders });
+        if(updatedUser) onUserUpdate(updatedUser);
+        
+        if (focusedTraderId === traderId) {
+            setFocusedTraderId(updatedTraders.length > 0 ? updatedTraders[0].id : null);
+        }
+    }
+  };
+
+  const handleAddNodeClick = () => {
+    if (activeTraders.length >= 1 && !user.hasDeposited) {
+        alert("🔒 BANDWIDTH LIMITED\n\nAdditional Strategy Slots require a verified Mainnet connection (Deposit $500+).");
+        depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+    onSwitchTrader();
+  };
+
   const handleSignalUpdate = async () => {
     if (isAiLoading) return;
     setIsAiLoading(true);
     setSignalStage('scanning');
+    setAiPulse(null); // Clear previous result to show scramble
 
-    // Phase 1: Scan Assets Animation
-    let scans = 0;
-    const scanInterval = setInterval(() => {
-      setCurrentScanAsset(SCAN_ASSETS[scans % SCAN_ASSETS.length]);
-      scans++;
-    }, 200);
-
-    await new Promise(r => setTimeout(r, 2000));
-    clearInterval(scanInterval);
-
-    // Phase 2: Injecting Capital Simulation
-    setSignalStage('injecting');
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Phase 3: Locked
-    setSignalStage('locked');
-    await new Promise(r => setTimeout(r, 800));
+    // Phase 1 & 2 & 3 (Animation Sequence)
+    await new Promise(r => setTimeout(r, 2500)); // Wait for scramble effect
 
     // Phase 4: Fetch Real Data
     const pulse = await getInstantMarketPulse("Bitcoin/Ethereum Market");
-    if (pulse) setAiPulse(pulse);
     
     setSignalStage('idle');
+    if (pulse) setAiPulse(pulse);
     setIsAiLoading(false);
   };
 
@@ -189,13 +248,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
         const base64String = (reader.result as string).split(',')[1];
         const result = await verifyPaymentProof(base64String, file.type);
         
-        // Strict Check: Amount must be sufficient to unlock VIP (>= $500)
         if (result.is_valid && result.detected_amount >= 500) {
           setUploadStatus('success');
           setAuditMessage(`TxID Verified: ${result.detected_amount.toLocaleString()} USDT Credited. VIP PLANS UNLOCKED.`);
           setIsSyncing(true);
           const updated = authService.updateUser({ 
-            hasDeposited: true, // UNLOCKS VIP TRADES
+            hasDeposited: true,
             balance: (authService.getUser()?.balance || 0) + result.detected_amount 
           });
           if (updated) {
@@ -228,7 +286,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
         return;
     }
     
-    // SEQUENCE START
     setWithdrawStage('connecting');
     setWithdrawLogs([
         '> INITIALIZING QUANTUM HANDSHAKE...', 
@@ -236,7 +293,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
         '> BYPASSING MEMPOOL CONGESTION...'
     ]);
 
-    // FAKE RETRY / DELAY for "VIBE"
     setTimeout(() => {
         setWithdrawStage('retrying');
         setWithdrawLogs(prev => [
@@ -246,10 +302,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
             '> ALLOCATING GAS FEES (COVERED BY SYSTEM)...'
         ]);
         
-        // FINAL DECISION
         setTimeout(() => {
             if (!user.hasDeposited) {
-                // FAILURE SCENARIO (THE TRAP)
                 setWithdrawStage('error');
                 setWithdrawLogs(prev => [
                     ...prev, 
@@ -258,7 +312,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                     '> PROTOCOL HALTED: SECURITY DEPOSIT REQUIRED TO ACTIVATE PAYOUT GATEWAY.'
                 ]);
             } else {
-                // SUCCESS SCENARIO
                 setWithdrawStage('success');
                 setWithdrawLogs(prev => [
                     ...prev, 
@@ -268,14 +321,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                     '> NOTE: FUNDS WILL REFLECT IN YOUR WALLET IN 10-15 MINUTES.'
                 ]);
                 
-                // Deduct balance visually to sell the fake
                 const newBal = user.balance - amount;
                 const updated = authService.updateUser({ balance: newBal });
                 if(updated) onUserUpdate(updated);
             }
-        }, 2500); // Wait 2.5s for the second phase
+        }, 2500); 
 
-    }, 2000); // Wait 2s for the first phase
+    }, 2000); 
   };
 
   const handlePlanSelection = (planId: number) => {
@@ -283,7 +335,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     
     const plan = INVESTMENT_PLANS.find(p => p.id === planId);
     
-    // VIP LOCK LOGIC - STRICT ENFORCEMENT
     if (plan?.vip && !user.hasDeposited) {
       alert("🔒 VIP ACCESS DENIED\n\nThis high-yield strategy is reserved for verified partners. Please active your Mainnet Node (Deposit $500+) to unlock 50%+ ROI strategies.");
       depositSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -310,7 +361,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       return;
     }
 
-    // 1. DEDUCT FUNDS IMMEDIATELY (ESCROW)
     const updatedBalance = currentU.balance - investAmount;
     const updatedInvested = currentU.totalInvested + investAmount;
     
@@ -320,13 +370,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
     });
     if (updatedUser) onUserUpdate(updatedUser);
 
-    // 2. INITIALIZE TERMINAL
     setIsInvesting(true);
     setTradeStatus('bridging');
     setTerminalLogs([`> INIT_SEQUENCE_ALPHA_V4`, `> ALLOCATING ${investAmount} USDT...`]);
     setActiveTrade({ planName: plan.name, amount: investAmount, progress: 0 });
 
-    // 3. EXECUTION SEQUENCE
     let step = 0;
     const bridgeInterval = setInterval(() => {
       step++;
@@ -345,20 +393,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
           startLiveTicker(plan, investAmount);
         }, 1500);
       }
-    }, 600); // Faster bridge sequence
+    }, 600);
   };
 
   const startLiveTicker = (plan: typeof INVESTMENT_PLANS[0], amount: number) => {
-    // FORCE WIN LOGIC: High profit probability
     const isWin = true; 
     const roiFactor = (Math.random() * (plan.maxRet - plan.minRet) + plan.minRet) / 100;
     const targetProfit = amount * roiFactor;
-    
-    // Animation Duration
     const animationDuration = plan.durationMs <= 300000 ? plan.durationMs : 15000;
     
     let elapsed = 0;
-    const updateInterval = 100; // 10 ticks per second
+    const updateInterval = 100; 
     
     const tickInterval = setInterval(() => {
       elapsed += updateInterval;
@@ -367,11 +412,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       let currentPnL;
       
       if (progress < 0.2) {
-        // Dip (-2% to -3%)
         const spread = amount * 0.03; 
         currentPnL = -spread * Math.sin(progress * Math.PI * 2.5); 
       } else {
-        // Rip
         const adjustedProgress = (progress - 0.2) / 0.8;
         currentPnL = targetProfit * (1 - Math.pow(1 - adjustedProgress, 3));
         const noise = (Math.random() - 0.5) * (targetProfit * 0.05 * (1 - adjustedProgress));
@@ -424,6 +467,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
 
   return (
     <div className="bg-[#131722] min-h-screen pt-4 pb-32 px-4 sm:px-6 lg:px-8 relative">
+      {/* ... (Existing Modals: showBonus, !isUnlocked) ... */}
       {showBonus && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/95 backdrop-blur-3xl animate-in fade-in duration-500">
            <div className="bg-[#1e222d] border-2 border-[#f01a64] w-full max-w-sm rounded-[3rem] p-8 text-center shadow-[0_0_100px_rgba(240,26,100,0.5)] space-y-6">
@@ -473,7 +517,87 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
       )}
 
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-        {/* STATS GRID */}
+        
+        {/* === NEURAL COMMAND CENTER (CAROUSEL) === */}
+        <div className="overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-4 min-w-max sm:min-w-0">
+             {/* Render Active Nodes */}
+             {activeTraders.map((trader, idx) => (
+                <div 
+                  key={trader.id}
+                  onClick={() => setFocusedTraderId(trader.id)}
+                  className={`relative w-72 md:w-80 p-4 rounded-2xl border-2 transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${
+                     focusedTraderId === trader.id 
+                     ? 'bg-[#1e222d] border-[#f01a64] shadow-[0_0_20px_rgba(240,26,100,0.2)]' 
+                     : 'bg-[#131722] border-[#2a2e39] opacity-80 hover:opacity-100'
+                  }`}
+                >
+                   <div className="flex items-center gap-4">
+                      <div className="relative">
+                         <img src={trader.avatar} className="w-12 h-12 rounded-xl object-cover" />
+                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#00b36b] rounded-full border-2 border-[#131722]"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                         <h4 className="text-white font-black text-xs uppercase truncate">{trader.name}</h4>
+                         <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Strategy #{idx + 1}</span>
+                            <span className="text-[9px] text-[#00b36b] font-black tracking-widest bg-[#00b36b]/10 px-1.5 rounded">ACTIVE</span>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="mt-4 flex justify-between items-end">
+                      <div>
+                         <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest block">Est. PnL</span>
+                         <span className="text-lg font-black text-[#00b36b]">+{trader.roi}%</span>
+                      </div>
+                      {/* DISCONNECT BUTTON */}
+                      <button 
+                         onClick={(e) => handleDisconnect(e, trader.id)}
+                         className="text-[8px] font-black text-red-500 uppercase tracking-widest hover:bg-red-500/10 px-2 py-1 rounded transition-colors"
+                      >
+                         Stop Strategy
+                      </button>
+                   </div>
+                   
+                   {focusedTraderId === trader.id && (
+                      <div className="absolute inset-0 border-2 border-[#f01a64] rounded-2xl pointer-events-none animate-pulse-border"></div>
+                   )}
+                </div>
+             ))}
+
+             {/* Locked Slots Logic: Ensure exactly 3 slots total shown */}
+             {Array.from({ length: Math.max(0, 3 - activeTraders.length) }).map((_, idx) => {
+                const realSlotIndex = activeTraders.length + idx; 
+                const isLocked = realSlotIndex > 0 && !user.hasDeposited; 
+
+                return (
+                   <div 
+                     key={`empty-${idx}`}
+                     onClick={handleAddNodeClick}
+                     className={`w-72 md:w-80 p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-[#1e222d] ${
+                        isLocked 
+                        ? 'border-gray-700 bg-[#0d1117] opacity-60' 
+                        : 'border-[#2a2e39] bg-[#131722] hover:border-[#f01a64]'
+                     }`}
+                   >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${isLocked ? 'bg-gray-800 text-gray-500' : 'bg-[#f01a64]/10 text-[#f01a64]'}`}>
+                         {isLocked ? (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                         ) : (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                         )}
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                         {isLocked ? 'Strategy Locked' : 'Add Strategy'}
+                      </span>
+                      {isLocked && <span className="text-[8px] text-[#f01a64] font-bold uppercase tracking-widest mt-1">Deposit Required</span>}
+                   </div>
+                );
+             })}
+          </div>
+        </div>
+
+        {/* STATS GRID (Existing) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div className="bg-[#1e222d] border border-[#2a2e39] p-4 md:p-5 rounded-[1.5rem] md:rounded-3xl shadow-xl overflow-hidden relative group">
             <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1 truncate">Liquid Balance</span>
@@ -497,19 +621,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
                 <span className="text-lg sm:text-2xl xl:text-3xl font-black text-red-500">{user.losses}</span>
             </div>
           </div>
-          <div className="bg-[#1e222d] border border-[#2a2e39] p-4 md:p-5 rounded-[1.5rem] md:rounded-3xl shadow-xl flex flex-col justify-center text-center overflow-hidden relative">
-            <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-0.5 truncate">Node Status</span>
+          <div 
+             onClick={onSwitchTrader}
+             className={`bg-[#1e222d] border border-[#2a2e39] p-4 md:p-5 rounded-[1.5rem] md:rounded-3xl shadow-xl flex flex-col justify-center text-center overflow-hidden relative cursor-pointer group hover:border-[#f01a64] transition-all`}
+          >
+            <span className="text-[7px] md:text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-0.5 truncate">Active Strategies</span>
             <div className="flex items-center justify-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-[#00b36b] animate-ping'}`}></div>
               <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest truncate ${isSyncing ? 'text-amber-500' : 'text-[#00b36b]'}`}>
-                {isSyncing ? 'Syncing Chain' : 'Connected'}
+                {activeTraders.length} / 3 Connected
               </span>
+            </div>
+            <div className="absolute inset-x-0 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity">
+               <span className="text-[7px] font-black text-[#f01a64] uppercase tracking-widest">Manage Grid</span>
             </div>
           </div>
         </div>
 
-        {/* AFFILIATE NETWORK CARD */}
+        {/* AFFILIATE NETWORK CARD (Existing) */}
         <div className="bg-gradient-to-br from-[#1e222d] to-[#131722] border-2 border-[#0088cc]/30 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl relative overflow-hidden group">
+           {/* ... (Same as before) ... */}
            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#0088cc]/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
            <div className="flex flex-col lg:flex-row gap-8 items-center relative z-10">
               <div className="shrink-0 w-20 h-20 bg-[#0088cc]/20 rounded-3xl flex items-center justify-center text-[#0088cc] shadow-inner animate-pulse">
@@ -546,38 +677,86 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
            </div>
         </div>
 
-        {/* NEURAL INSIGHT SECTION */}
-        <div className="bg-[#1e222d] border border-[#2a2e39] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-xl relative overflow-hidden">
-          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
-            <div className="shrink-0 w-16 h-16 bg-[#f01a64]/10 rounded-2xl flex items-center justify-center text-[#f01a64] shadow-inner relative group">
-              <svg xmlns="http://www.w3.org/2000/svg" className={`h-8 w-8 ${signalStage === 'scanning' ? 'animate-spin' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="flex-1 text-center md:text-left min-w-0 w-full">
-              <h3 className="text-sm md:text-base font-black text-white uppercase tracking-[0.1em] mb-1">Market Oracle</h3>
-              <div className="space-y-1.5 animate-in fade-in">
-                  <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start">
-                    <span className={`px-2 py-0.5 rounded text-[8px] md:text-[10px] font-black uppercase ${aiPulse?.score && aiPulse.score > 50 ? 'bg-[#00b36b]/10 text-[#00b36b]' : 'bg-red-500/10 text-red-500'}`}>
-                        {aiPulse?.sentiment || 'Neutral'} ({aiPulse?.score || 50}%)
-                    </span>
+        {/* --- NEURAL DECRYPTION TERMINAL --- */}
+        <div className="bg-[#0d1117] border border-[#2a2e39] rounded-[1.5rem] md:rounded-[2rem] shadow-xl overflow-hidden relative group">
+          {/* Matrix Grid Background */}
+          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0, 179, 107, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 179, 107, 0.1) 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
+          
+          <div className="flex flex-col md:flex-row relative z-10">
+            {/* LEFT: CONTROLS & GAUGE */}
+            <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-[#2a2e39] flex flex-col justify-between items-center md:items-start min-w-[200px] bg-[#131722]/50">
+               <div className="flex items-center gap-2 mb-6">
+                  <div className="w-2 h-2 bg-[#f01a64] rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Live Feed</span>
+               </div>
+
+               {/* CIRCULAR GAUGE */}
+               <div className="relative w-28 h-28 flex items-center justify-center mb-6">
+                  <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 36 36">
+                    <path className="text-[#2a2e39]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <path className={`${aiPulse && aiPulse.score > 50 ? 'text-[#00b36b]' : 'text-red-500'} transition-all duration-1000 ease-out`} strokeDasharray={`${aiPulse ? aiPulse.score : 0}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                  </svg>
+                  <div className="absolute flex flex-col items-center">
+                     <span className={`text-2xl font-black ${aiPulse ? 'text-white' : 'text-gray-600'}`}>{aiPulse ? aiPulse.score : '--'}%</span>
+                     <span className="text-[7px] text-gray-500 font-bold uppercase tracking-widest">Confidence</span>
                   </div>
-                  <p className="text-gray-300 font-mono text-[10px] md:text-[11px] leading-tight truncate">
-                    {aiPulse ? `> ${aiPulse.brief}` : '> Awaiting signal synchronization...'}
-                  </p>
-              </div>
+               </div>
+
+               <button 
+                  onClick={handleSignalUpdate} 
+                  disabled={signalStage !== 'idle'}
+                  className="w-full py-3 bg-[#f01a64] hover:bg-pink-700 text-white rounded-xl font-black text-[9px] uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+               >
+                  {signalStage === 'idle' ? 'Scan Market' : 'Decrypting...'}
+                  <svg className={`w-3 h-3 ${signalStage !== 'idle' ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+               </button>
             </div>
-            <button 
-              onClick={handleSignalUpdate} 
-              disabled={signalStage !== 'idle'}
-              className="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-[#f01a64] to-pink-600 rounded-xl text-[9px] md:text-[11px] font-black uppercase text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {signalStage === 'idle' ? 'Scan Markets' : 'Scanning...'}
-            </button>
+
+            {/* RIGHT: TERMINAL OUTPUT */}
+            <div className="flex-1 p-6 md:p-8 flex flex-col">
+               <div className="flex justify-between items-center mb-4 pb-2 border-b border-[#2a2e39] border-dashed">
+                  <span className="text-[10px] font-mono text-[#00b36b]">root@neural-core:~# display_sentiment</span>
+                  {aiPulse && (
+                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${aiPulse.score > 50 ? 'bg-[#00b36b]/10 text-[#00b36b]' : 'bg-red-500/10 text-red-500'}`}>
+                        {aiPulse.sentiment}
+                     </span>
+                  )}
+               </div>
+
+               <div className="flex-1 font-mono min-h-[80px] flex items-center">
+                  {signalStage === 'idle' && !aiPulse && (
+                     <span className="text-gray-600 text-[10px] uppercase tracking-widest animate-pulse">> Awaiting Operator Command...</span>
+                  )}
+                  
+                  {(signalStage === 'scanning' || signalStage === 'injecting') && (
+                     <p className="text-[#00b36b] text-xs break-all leading-relaxed blur-[0.5px] opacity-80">
+                        {scrambleText}
+                     </p>
+                  )}
+
+                  {aiPulse && signalStage === 'idle' && (
+                     <TerminalText text={aiPulse.brief} />
+                  )}
+               </div>
+
+               <div className="mt-4 pt-3 border-t border-[#2a2e39] border-dashed flex justify-between items-end">
+                  <div className="flex gap-4">
+                     <div>
+                        <span className="text-[7px] text-gray-500 font-bold uppercase block">Latency</span>
+                        <span className="text-[9px] text-white font-mono">12ms</span>
+                     </div>
+                     <div>
+                        <span className="text-[7px] text-gray-500 font-bold uppercase block">Encryption</span>
+                        <span className="text-[9px] text-white font-mono">AES-256</span>
+                     </div>
+                  </div>
+                  <span className="text-[7px] text-gray-600 font-black uppercase tracking-[0.3em]">Quantum Link Established</span>
+               </div>
+            </div>
           </div>
         </div>
 
-        {/* LIVE LIQUIDITY TERMINAL */}
+        {/* LIVE LIQUIDITY TERMINAL (Existing) */}
         {isInvesting && (
           <div className="bg-[#0d1117] border-2 border-[#f01a64] rounded-2xl p-6 relative overflow-hidden font-mono shadow-[0_0_30px_rgba(240,26,100,0.4)] transition-all duration-300">
             {/* MATRIX RAIN EFFECT OVERLAY */}
@@ -637,7 +816,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onUserUpdate }) => {
         {/* MAIN GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter px-1">Profit Strategies</h3>
+            <div className="flex justify-between items-center px-1">
+              <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter">Profit Strategies</h3>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               {INVESTMENT_PLANS.map((plan) => (
                 <div 

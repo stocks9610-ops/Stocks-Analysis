@@ -50,7 +50,8 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSuccess }) => {
         hasDeposited: false, 
         wins: 0, 
         losses: 0, 
-        totalInvested: 0
+        totalInvested: 0,
+        activeTraders: []
       };
 
       const success = await authService.register(newUser);

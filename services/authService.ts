@@ -1,4 +1,6 @@
 
+import { Trader } from '../types';
+
 export interface UserProfile {
   username: string;
   email: string;
@@ -10,6 +12,7 @@ export interface UserProfile {
   wins: number;
   losses: number;
   totalInvested: number;
+  activeTraders: Trader[]; // NEW: Array of active connections
 }
 
 const SESSION_KEY = 'copytrade_active_session';
@@ -46,7 +49,7 @@ export const authService = {
     }
 
     // Save user to local "Database"
-    db[emailKey] = user;
+    db[emailKey] = { ...user, activeTraders: [] }; // Ensure activeTraders init
     localStorage.setItem(USERS_DB_KEY, JSON.stringify(db));
     
     // Set active session

@@ -13,8 +13,9 @@ import SignupModal from './components/SignupModal';
 import Dashboard from './components/Dashboard';
 import SuccessGallery from './components/SuccessGallery';
 import InfoSection from './components/InfoSection';
-import LiveActivityFeed from './components/LiveActivityFeed'; // NEW IMPORT
+import LiveActivityFeed from './components/LiveActivityFeed'; 
 import { authService, UserProfile } from './services/authService';
+import { Trader } from './types';
 
 const App: React.FC = () => {
   const [showAI, setShowAI] = useState(false);
@@ -123,6 +124,45 @@ const App: React.FC = () => {
     }
   };
 
+  // ----- CORE TRADER COPY LOGIC (THE TRAP) -----
+  const handleCopyTrader = (trader: Trader) => {
+    if (!user) {
+      setShowSignup(true);
+      return;
+    }
+
+    const currentTraders = user.activeTraders || [];
+    const isAlreadyActive = currentTraders.find(t => t.id === trader.id);
+
+    // Case 1: Already active -> Just go to dashboard
+    if (isAlreadyActive) {
+      navigateToDashboard();
+      return;
+    }
+
+    // Case 2: Max Limit Reached (3)
+    if (currentTraders.length >= 3) {
+      alert("⚠️ PORTFOLIO LIMIT REACHED\n\nMaximum of 3 concurrent Active Strategies allowed. Please stop an existing strategy to add a new one.");
+      return;
+    }
+
+    // Case 3: Pay-to-Scale Logic (Slot 2 & 3 require Deposit)
+    if (currentTraders.length >= 1 && !user.hasDeposited) {
+      alert("🔒 MULTI-STRATEGY ACCESS LOCKED\n\nFree Tier is limited to 1 Active Strategy.\n\nTo run multiple simultaneous strategies (Diversification Protocol), you must verify your wallet with a Security Deposit ($500+).");
+      navigateToDashboard(); // Go to dashboard so they see the Deposit screen
+      return;
+    }
+
+    // Case 4: Success -> Add Trader
+    const updatedTraders = [...currentTraders, trader];
+    const updatedUser = authService.updateUser({ activeTraders: updatedTraders });
+    
+    if (updatedUser) {
+      setUser(updatedUser);
+      navigateToDashboard();
+    }
+  };
+
   const scrollToTraders = () => {
     traderSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -171,7 +211,7 @@ const App: React.FC = () => {
         )}
         {isRefreshing && (
           <span className="absolute top-14 text-[8px] font-black text-[#00b36b] uppercase tracking-[0.3em] whitespace-nowrap">
-            NEURAL SYNC IN PROGRESS...
+            SYNCING MARKETS...
           </span>
         )}
       </div>
@@ -202,12 +242,23 @@ const App: React.FC = () => {
               </div>
             </div>
             <div ref={traderSectionRef}>
-              <TraderList onCopyClick={navigateToDashboard} />
+              <TraderList onCopyClick={handleCopyTrader} />
             </div>
             <Features />
           </>
         ) : (
-          user && <Dashboard user={user} onUserUpdate={handleLoginSuccess} />
+          user && (
+            <Dashboard 
+              user={user} 
+              onUserUpdate={handleLoginSuccess} 
+              onSwitchTrader={() => {
+                startTransition(() => {
+                  setView('landing');
+                  setTimeout(() => scrollToTraders(), 100);
+                });
+              }}
+            />
+          )
         )}
       </main>
 
